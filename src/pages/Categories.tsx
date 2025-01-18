@@ -18,6 +18,7 @@ import {
   AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
+  AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
@@ -27,15 +28,16 @@ import { useState } from "react";
 
 const Categories = () => {
   const queryClient = useQueryClient();
-  
-  const { data: categories, isLoading } = useQuery({
+
+  // Carregar categorias do banco de dados
+  const { data: categories = [], isLoading } = useQuery({
     queryKey: ['categories'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('categories')
         .select('*')
         .order('name');
-      
+
       if (error) throw error;
       return data;
     },
@@ -62,10 +64,10 @@ const Categories = () => {
   };
 
   // Filtra as categorias com base no nome ou descrição
-  const filteredCategories = categories?.filter((category) => {
+  const filteredCategories = categories.filter((category) => {
     return (
       category.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      category.description.toLowerCase().includes(searchQuery.toLowerCase())
+      (category.description && category.description.toLowerCase().includes(searchQuery.toLowerCase())) // Verifica se description existe
     );
   });
 
@@ -75,7 +77,7 @@ const Categories = () => {
         <h1 className="text-3xl font-bold">Categorias</h1>
         <CategoryDialog />
       </div>
-      
+
       {/* Barra de busca */}
       <div className="relative mb-4">
         <input
@@ -92,7 +94,7 @@ const Categories = () => {
           <div className="text-center text-gray-500 py-6">
             Carregando categorias...
           </div>
-        ) : !filteredCategories?.length ? (
+        ) : !filteredCategories.length ? (
           <div className="text-center text-gray-500 py-6">
             Nenhuma categoria encontrada
           </div>
@@ -128,18 +130,14 @@ const Categories = () => {
                         </AlertDialogTrigger>
                         <AlertDialogContent>
                           <AlertDialogHeader>
-                            <AlertDialogTitle>
-                              Excluir categoria
-                            </AlertDialogTitle>
+                            <AlertDialogTitle>Excluir categoria</AlertDialogTitle>
                             <AlertDialogDescription>
                               Tem certeza que deseja excluir esta categoria? Esta ação não pode ser desfeita.
                             </AlertDialogDescription>
                           </AlertDialogHeader>
                           <AlertDialogFooter>
                             <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                            <AlertDialogAction
-                              onClick={() => handleDelete(category.id)}
-                            >
+                            <AlertDialogAction onClick={() => handleDelete(category.id)}>
                               Excluir
                             </AlertDialogAction>
                           </AlertDialogFooter>
