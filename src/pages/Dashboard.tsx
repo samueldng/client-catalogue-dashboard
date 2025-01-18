@@ -1,7 +1,68 @@
 import { Card } from "@/components/ui/card";
 import { DollarSign, Package, ShoppingCart, Users } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 const Dashboard = () => {
+  const { data: totalProfit } = useQuery({
+    queryKey: ['totalProfit'],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc('get_total_profit');
+      if (error) throw error;
+      return data || 0;
+    },
+  });
+
+  const { data: totalReceivables } = useQuery({
+    queryKey: ['totalReceivables'],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc('get_total_receivables');
+      if (error) throw error;
+      return data || 0;
+    },
+  });
+
+  const { data: totalSales } = useQuery({
+    queryKey: ['totalSales'],
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from('sales')
+        .select('*', { count: 'exact', head: true });
+      if (error) throw error;
+      return count || 0;
+    },
+  });
+
+  const { data: totalDebtors } = useQuery({
+    queryKey: ['totalDebtors'],
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from('sales')
+        .select('*', { count: 'exact', head: true })
+        .eq('payment_status', 'pending');
+      if (error) throw error;
+      return count || 0;
+    },
+  });
+
+  const { data: totalProducts } = useQuery({
+    queryKey: ['totalProducts'],
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from('products')
+        .select('*', { count: 'exact', head: true });
+      if (error) throw error;
+      return count || 0;
+    },
+  });
+
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL'
+    }).format(value);
+  };
+
   return (
     <div className="space-y-6">
       <h1 className="text-3xl font-bold">Dashboard</h1>
@@ -13,8 +74,8 @@ const Dashboard = () => {
               <DollarSign className="h-6 w-6 text-primary" />
             </div>
             <div>
-              <p className="text-sm text-gray-500">Faturamento</p>
-              <p className="text-2xl font-bold">R$ 25.000</p>
+              <p className="text-sm text-gray-500">Lucro Total</p>
+              <p className="text-2xl font-bold">{formatCurrency(totalProfit || 0)}</p>
             </div>
           </div>
         </Card>
@@ -25,8 +86,8 @@ const Dashboard = () => {
               <ShoppingCart className="h-6 w-6 text-green-600" />
             </div>
             <div>
-              <p className="text-sm text-gray-500">Vendas</p>
-              <p className="text-2xl font-bold">150</p>
+              <p className="text-sm text-gray-500">Total de Vendas</p>
+              <p className="text-2xl font-bold">{totalSales || 0}</p>
             </div>
           </div>
         </Card>
@@ -37,8 +98,8 @@ const Dashboard = () => {
               <Users className="h-6 w-6 text-yellow-600" />
             </div>
             <div>
-              <p className="text-sm text-gray-500">Devedores</p>
-              <p className="text-2xl font-bold">12</p>
+              <p className="text-sm text-gray-500">Valor a Receber</p>
+              <p className="text-2xl font-bold">{formatCurrency(totalReceivables || 0)}</p>
             </div>
           </div>
         </Card>
@@ -49,8 +110,8 @@ const Dashboard = () => {
               <Package className="h-6 w-6 text-purple-600" />
             </div>
             <div>
-              <p className="text-sm text-gray-500">Produtos</p>
-              <p className="text-2xl font-bold">45</p>
+              <p className="text-sm text-gray-500">Total de Produtos</p>
+              <p className="text-2xl font-bold">{totalProducts || 0}</p>
             </div>
           </div>
         </Card>
