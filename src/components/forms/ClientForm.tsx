@@ -12,6 +12,8 @@ import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { z } from "zod";
+import { zodResolver } from '@hookform/resolvers/zod';
 
 interface ClientFormProps {
   initialData?: {
@@ -31,9 +33,18 @@ interface ClientFormData {
   address: string;
 }
 
+// Validação com Zod
+const schema = z.object({
+  name: z.string().min(1, 'Nome é obrigatório'),
+  email: z.string().email('Email inválido').min(1, 'Email é obrigatório'),
+  phone: z.string().min(1, 'Telefone é obrigatório'),
+  address: z.string().min(1, 'Endereço é obrigatório'),
+});
+
 export function ClientForm({ initialData, onSuccess }: ClientFormProps) {
   const queryClient = useQueryClient();
   const form = useForm<ClientFormData>({
+    resolver: zodResolver(schema),
     defaultValues: {
       name: initialData?.name || "",
       email: initialData?.email || "",
@@ -46,19 +57,19 @@ export function ClientForm({ initialData, onSuccess }: ClientFormProps) {
     try {
       if (initialData?.id) {
         const { error } = await supabase
-          .from("clients")
+          .from("customers") // Aqui foi corrigido para "customers"
           .update(data)
           .eq("id", initialData.id);
 
         if (error) throw error;
         toast.success("Cliente atualizado com sucesso!");
       } else {
-        const { error } = await supabase.from("clients").insert(data);
+        const { error } = await supabase.from("customers").insert(data); // Alterado para "customers"
         if (error) throw error;
         toast.success("Cliente criado com sucesso!");
       }
 
-      queryClient.invalidateQueries({ queryKey: ["clients"] });
+      queryClient.invalidateQueries({ queryKey: ["customers"] }); // Corrigido para "customers"
       form.reset();
       onSuccess?.();
     } catch (error) {
@@ -126,7 +137,7 @@ export function ClientForm({ initialData, onSuccess }: ClientFormProps) {
           )}
         />
 
-        <Button type="submit">
+        <Button type="submit" disabled={form.formState.isSubmitting}>
           {initialData ? "Atualizar" : "Criar"} Cliente
         </Button>
       </form>

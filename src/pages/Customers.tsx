@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/table";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { ClientForm } from "@/components/forms/ClientForm"; // Importar o formulário de cliente
+import { ClientForm } from "@/components/forms/ClientForm"; // Importando o formulário de cliente
 
 const Customers = () => {
   const [isFormOpen, setIsFormOpen] = useState(false); // Estado para controlar a visibilidade do formulário
