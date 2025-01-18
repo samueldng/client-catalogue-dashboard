@@ -1,26 +1,9 @@
 import React, { useState } from "react";
-import {
-  LayoutDashboard,
-  Users,
-  Package,
-  ShoppingCart,
-  AlertCircle,
-  Tags,
-} from "lucide-react";
-import {
-  Sidebar,
-  SidebarContent,
-  SidebarGroup,
-  SidebarGroupLabel,
-  SidebarGroupContent,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-} from "@/components/ui/sidebar";
+import { LayoutDashboard, Users, Package, ShoppingCart, AlertCircle, Tags } from "lucide-react";
+import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupLabel, SidebarGroupContent, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from "@/components/ui/sidebar";
 import { Link } from "react-router-dom";
-import { useIsMobile } from "@/hooks/use-mobile"; // Importando o hook useIsMobile
+import { useIsMobile } from "@/hooks/use-mobile"; // Importando o hook para detectar dispositivos móveis
 
-// Definindo os itens do menu
 const menuItems = [
   { title: "Dashboard", icon: LayoutDashboard, path: "/" },
   { title: "Clientes", icon: Users, path: "/customers" },
@@ -32,16 +15,15 @@ const menuItems = [
 
 export function AppSidebar() {
   const isMobile = useIsMobile();  // Verifica se o dispositivo é móvel
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false); // Estado para controlar o menu lateral
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);  // Estado para controlar a visibilidade do menu
 
-  // Função que alterna o estado de visibilidade do sidebar
   const toggleSidebar = () => {
-    setIsSidebarOpen(!isSidebarOpen);
+    setIsSidebarOpen(!isSidebarOpen); // Alternar visibilidade do menu
   };
 
   return (
     <div className={`flex ${isMobile && !isSidebarOpen ? "hidden" : "block"} lg:block`}>
-      <Sidebar>
+      <Sidebar className={isMobile && !isSidebarOpen ? "hidden" : ""}>
         <SidebarContent>
           <SidebarGroup>
             <SidebarGroupLabel>Menu</SidebarGroupLabel>
@@ -63,10 +45,10 @@ export function AppSidebar() {
         </SidebarContent>
       </Sidebar>
 
-      {/* Botão hamburger visível apenas no mobile */}
+      {/* Botão Hamburger para dispositivos móveis */}
       {isMobile && (
         <button
-          className="lg:hidden fixed top-4 left-4 p-3 bg-primary text-white rounded-full"
+          className="lg:hidden fixed top-4 left-4 p-3 bg-primary text-white rounded-full z-50"
           onClick={toggleSidebar}
         >
           ☰
