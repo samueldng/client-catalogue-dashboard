@@ -10,6 +10,7 @@ import {
   import { useState, useEffect } from "react";
   import { supabase } from "@/integrations/supabase/client";
   import { useQuery } from "@tanstack/react-query";
+  import { toast } from "sonner"; // Adicionando toast para feedback de erros ou sucessos.
   
   interface SaleDialogProps {
     initialData?: {
@@ -36,18 +37,18 @@ import {
   
     // Fetch customers and products
     const { data: customerData, isLoading: loadingCustomers } = useQuery({
-      queryKey: ['customers'],
+      queryKey: ["customers"],
       queryFn: async () => {
-        const { data, error } = await supabase.from('customers').select('id, name');
+        const { data, error } = await supabase.from("customers").select("id, name");
         if (error) throw error;
         return data;
       },
     });
   
     const { data: productData, isLoading: loadingProducts } = useQuery({
-      queryKey: ['products'],
+      queryKey: ["products"],
       queryFn: async () => {
-        const { data, error } = await supabase.from('products').select('id, name, price, stock_quantity');
+        const { data, error } = await supabase.from("products").select("id, name, price, stock_quantity");
         if (error) throw error;
         return data;
       },
@@ -67,18 +68,38 @@ import {
           return;
         } else {
           setStockError(""); // Clear the stock error
-          setSelectedProducts(prev => [
-            ...prev,
-            {
-              productId: product.id,
-              productName: product.name,
-              price: product.price,
-              quantity,
-              total: product.price * quantity,
-            },
-          ]);
+          // Check if product is already added
+          const existingProductIndex = selectedProducts.findIndex(p => p.productId === productId);
+          if (existingProductIndex >= 0) {
+            // Update existing product's quantity and total
+            const updatedProducts = [...selectedProducts];
+            updatedProducts[existingProductIndex].quantity += quantity;
+            updatedProducts[existingProductIndex].total =
+              updatedProducts[existingProductIndex].price * updatedProducts[existingProductIndex].quantity;
+            setSelectedProducts(updatedProducts);
+          } else {
+            // Add new product to selected products list
+            setSelectedProducts(prev => [
+              ...prev,
+              {
+                productId: product.id,
+                productName: product.name,
+                price: product.price,
+                quantity,
+                total: product.price * quantity,
+              },
+            ]);
+          }
           setTotalAmount(prev => prev + product.price * quantity);
         }
+      }
+    };
+  
+    const handleRemoveProduct = (productId: string) => {
+      const productToRemove = selectedProducts.find(p => p.productId === productId);
+      if (productToRemove) {
+        setSelectedProducts(prev => prev.filter(p => p.productId !== productId));
+        setTotalAmount(prev => prev - productToRemove.total);
       }
     };
   
@@ -95,15 +116,15 @@ import {
         customer_id: selectedCustomer,
         payment_method: selectedPaymentMethod,
         total_amount: totalAmount,
-        status: 'pending', // You can update the status logic
+        status: "pending", // You can update the status logic
         created_at: new Date().toISOString(),
       };
   
       // Insert sale into the database
-      const { error } = await supabase.from('sales').insert([saleData]);
+      const { error } = await supabase.from("sales").insert([saleData]);
   
       if (error) {
-        console.error('Error creating sale:', error);
+        console.error("Error creating sale:", error);
       } else {
         toast.success("Venda registrada com sucesso!");
         setOpen(false); // Close the dialog on success
@@ -202,6 +223,26 @@ import {
               </div>
   
               {stockError && <p className="text-red-500">{stockError}</p>}
+  
+              {/* List of selected products with quantity and total */}
+              <div className="mt-4">
+                <h4 className="text-lg font-medium">Produtos Selecionados</h4>
+                <ul className="space-y-2">
+                  {selectedProducts.map((product) => (
+                    <li key={product.productId} className="flex justify-between">
+                      <span>{product.productName} - {product.quantity}x</span>
+                      <span>R$ {product.total.toFixed(2)}</span>
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveProduct(product.productId)}
+                        className="text-red-500"
+                      >
+                        Remover
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
   
               <div className="flex justify-between items-center mt-4">
                 <div>
