@@ -1,15 +1,8 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { Plus, Search, Edit, Trash2 } from "lucide-react";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { Card } from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { ClientForm } from "@/components/forms/ClientForm"; // Importando o formulário de cliente
@@ -18,7 +11,7 @@ import { toast } from "sonner";
 const Customers = () => {
   const [isFormOpen, setIsFormOpen] = useState(false); // Estado para controlar a visibilidade do formulário
   const [searchQuery, setSearchQuery] = useState(""); // Estado para armazenar o termo de busca
-  const [editClientData, setEditClientData] = useState<any>(null); // Estado para armazenar dados do cliente a ser editado
+  const [editClientData, setEditClientData] = useState(null); // Estado para armazenar dados do cliente a ser editado
   const queryClient = useQueryClient();
 
   const { data: customers, isLoading } = useQuery({
@@ -78,32 +71,17 @@ const Customers = () => {
   });
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 relative"> {/* Adicionando 'relative' para a camada overlay funcionar corretamente */}
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold text-gray-900">Clientes</h1>
         <Button
-          onClick={() => openForm()} // Abre o formulário em modo de criação
+          onClick={() => openForm()}
           className="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-blue-700"
         >
           <Plus className="w-5 h-5" />
           Novo Cliente
         </Button>
       </div>
-
-      {/* Exibe o formulário de cliente quando o estado isFormOpen é true */}
-      {isFormOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md">
-            <h2 className="text-xl font-semibold mb-4">
-              {editClientData ? "Editar Cliente" : "Novo Cliente"}
-            </h2>
-            <ClientForm
-              initialData={editClientData}
-              onSuccess={handleFormSuccess} // Passa a função para fechar o modal após sucesso
-            />
-          </div>
-        </div>
-      )}
 
       {/* Barra de busca */}
       <div className="relative">
@@ -117,6 +95,20 @@ const Customers = () => {
         />
       </div>
 
+      {/* Exibe o formulário de cliente quando o estado isFormOpen é true */}
+      {isFormOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"> {/* Overlay com z-index alto */}
+          <div className="bg-white rounded-lg p-6 w-full max-w-md z-50">
+            <h2 className="text-xl font-semibold mb-4">{editClientData ? "Editar Cliente" : "Novo Cliente"}</h2>
+            <ClientForm
+              initialData={editClientData}
+              onSuccess={handleFormSuccess}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Lista de clientes */}
       <Card className="p-6">
         {isLoading ? (
           <div className="text-center text-gray-500 py-6">
@@ -147,13 +139,13 @@ const Customers = () => {
                   <TableCell>
                     <div className="flex gap-2 justify-start"> {/* Alinhando à esquerda */}
                       <Button
-                        onClick={() => openForm(customer)} // Abre o formulário de edição
+                        onClick={() => openForm(customer)}
                         className="bg-blue-600 text-white hover:bg-blue-700 px-3 py-2 rounded-md"
                       >
                         <Edit className="w-5 h-5" />
                       </Button>
                       <Button
-                        onClick={() => handleDelete(customer.id)} // Chama a função de exclusão
+                        onClick={() => handleDelete(customer.id)}
                         className="bg-red-600 text-white hover:bg-red-700 px-3 py-2 rounded-md"
                       >
                         <Trash2 className="w-5 h-5" />
