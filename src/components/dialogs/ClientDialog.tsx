@@ -12,17 +12,27 @@ interface ClientDialogProps {
     phone: string;
     address: string;
   };
-  trigger?: React.ReactNode;
+  trigger?: React.ReactNode; // Permite passar um botão personalizado para abrir o modal
 }
 
 export function ClientDialog({ initialData, trigger }: ClientDialogProps) {
   const [open, setOpen] = useState(false);
 
+  // Função para alternar o estado de abertura do modal
+  const handleDialogOpen = () => {
+    setOpen(true);
+  };
+
+  const handleDialogClose = () => {
+    setOpen(false);
+  };
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
+      {/* Usando DialogTrigger com o trigger passado como prop ou um botão padrão */}
       <DialogTrigger asChild>
         {trigger || (
-          <Button>
+          <Button onClick={handleDialogOpen}>
             <Plus className="h-4 w-4 mr-2" />
             Novo Cliente
           </Button>
@@ -34,7 +44,7 @@ export function ClientDialog({ initialData, trigger }: ClientDialogProps) {
         </DialogHeader>
         <ClientForm
           initialData={initialData}
-          onSuccess={() => setOpen(false)} // Fecha o diálogo após o sucesso
+          onSuccess={handleDialogClose} // Fecha o diálogo após o sucesso
         />
       </DialogContent>
     </Dialog>
