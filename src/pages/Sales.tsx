@@ -9,7 +9,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useState, useEffect } from "react";
 
@@ -21,6 +21,8 @@ const Sales = () => {
   const [quantity, setQuantity] = useState(0);
   const [price, setPrice] = useState(0);
   const [total, setTotal] = useState(0);
+  const [selectedCustomer, setSelectedCustomer] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState("");
 
   const { data: sales, isLoading } = useQuery({
     queryKey: ['sales'],
@@ -44,7 +46,7 @@ const Sales = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('products')
-        .select('id, name, price');
+        .select('id, name, price, stock_quantity');
 
       if (error) throw error;
       return data;
@@ -89,11 +91,68 @@ const Sales = () => {
     return new Date(date).toLocaleDateString('pt-BR');
   };
 
-  const handleSubmit = (event: React.FormEvent) => {
+  const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
-    // Aqui você pode enviar os dados para o Supabase para salvar a nova venda
-    console.log("Venda registrada!");
-    setShowForm(false);
+
+    // Verifica se a quantidade do produto é suficiente em estoque
+    const productInStock = products.find(
+      (product) => product.id === selectedProduct?.id
+    );
+
+    if (!productInStock || productInStock.stock_quantity < quantity) {
+      alert("Quantidade insuficiente em estoque!");
+      return;
+    }
+
+    try {
+      // 1. Registrar a venda
+      const { data: saleData, error: saleError } = await supabase
+        .from("sales")
+        .insert([
+          {
+            customer_id: selectedCustomer,
+            payment_method_id: paymentMethod,
+            total_amount: total,
+            payment_status: "pending", // Inicialmente "pendente"
+          },
+        ])
+        .single();
+
+      if (saleError) throw saleError;
+
+      // 2. Registrar os itens da venda
+      const saleItems = [
+        {
+          product_id: selectedProduct.id,
+          quantity,
+          unit_price: price,
+          total_price: total,
+          sale_id: saleData.id,
+        },
+      ];
+
+      const { error: saleItemsError } = await supabase
+        .from("sale_items")
+        .insert(saleItems);
+
+      if (saleItemsError) throw saleItemsError;
+
+      // 3. Atualizar o estoque do produto
+      const updatedStock = productInStock.stock_quantity - quantity;
+      const { error: updateStockError } = await supabase
+        .from("products")
+        .update({ stock_quantity: updatedStock })
+        .eq("id", selectedProduct.id);
+
+      if (updateStockError) throw updateStockError;
+
+      // Sucesso
+      alert("Venda registrada com sucesso!");
+      setShowForm(false);
+    } catch (error) {
+      console.error("Erro ao registrar a venda", error);
+      alert("Ocorreu um erro ao registrar a venda.");
+    }
   };
 
   return (
@@ -108,13 +167,9 @@ const Sales = () => {
 
       <Card className="p-6">
         {isLoading ? (
-          <div className="text-center text-gray-500 py-6">
-            Carregando vendas...
-          </div>
+          <div className="text-center text-gray-500 py-6">Carregando vendas...</div>
         ) : !sales?.length ? (
-          <div className="text-center text-gray-500 py-6">
-            Nenhuma venda registrada
-          </div>
+          <div className="text-center text-gray-500 py-6">Nenhuma venda registrada</div>
         ) : (
           <Table>
             <TableHeader>
@@ -134,12 +189,14 @@ const Sales = () => {
                   <TableCell>{sale.payment_method?.name}</TableCell>
                   <TableCell className="text-right">{formatCurrency(sale.total_amount)}</TableCell>
                   <TableCell>
-                    <span className={`inline-block px-2 py-1 rounded-full text-xs font-semibold ${
-                      sale.payment_status === 'paid' 
-                        ? 'bg-green-100 text-green-800'
-                        : 'bg-yellow-100 text-yellow-800'
-                    }`}>
-                      {sale.payment_status === 'paid' ? 'Pago' : 'Pendente'}
+                    <span
+                      className={`inline-block px-2 py-1 rounded-full text-xs font-semibold ${
+                        sale.payment_status === "paid"
+                          ? "bg-green-100 text-green-800"
+                          : "bg-yellow-100 text-yellow-800"
+                      }`}
+                    >
+                      {sale.payment_status === "paid" ? "Pago" : "Pendente"}
                     </span>
                   </TableCell>
                 </TableRow>
@@ -161,6 +218,7 @@ const Sales = () => {
                   <select
                     className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                     name="customer"
+                    onChange={(e) => setSelectedCustomer(e.target.value)}
                     required
                   >
                     <option>Selecione um cliente</option>
@@ -176,13 +234,14 @@ const Sales = () => {
                   <select
                     className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                     name="payment_method"
+                    onChange={(e) => setPaymentMethod(e.target.value)}
                     required
                   >
                     <option>Selecione a forma de pagamento</option>
-                    <option>Dinheiro</option>
-                    <option>Cartão de Crédito</option>
-                    <option>PIX</option>
-                    <option>A Prazo</option>
+                    <option value="1">Dinheiro</option>
+                    <option value="2">Cartão de Crédito</option>
+                    <option value="3">PIX</option>
+                    <option value="4">A Prazo</option>
                   </select>
                 </div>
               </div>

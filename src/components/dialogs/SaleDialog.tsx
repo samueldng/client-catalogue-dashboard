@@ -25,12 +25,14 @@ import {
   
   export function SaleDialog({ initialData, trigger }: SaleDialogProps) {
     const [open, setOpen] = useState(false);
-    const [customers, setCustomers] = useState([]);
-    const [products, setProducts] = useState([]);
-    const [selectedCustomer, setSelectedCustomer] = useState("");
-    const [selectedPaymentMethod, setSelectedPaymentMethod] = useState("");
+    const [customers, setCustomers] = useState<any[]>([]);
+    const [products, setProducts] = useState<any[]>([]);
+    const [selectedCustomer, setSelectedCustomer] = useState<string>("");
+    const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string>("");
     const [selectedProducts, setSelectedProducts] = useState<any[]>([]);
-    const [totalAmount, setTotalAmount] = useState(0);
+    const [totalAmount, setTotalAmount] = useState<number>(0);
+    const [quantity, setQuantity] = useState<number>(1);
+    const [stockError, setStockError] = useState<string>("");
   
     // Fetch customers and products
     const { data: customerData, isLoading: loadingCustomers } = useQuery({
@@ -45,7 +47,7 @@ import {
     const { data: productData, isLoading: loadingProducts } = useQuery({
       queryKey: ['products'],
       queryFn: async () => {
-        const { data, error } = await supabase.from('products').select('id, name, price');
+        const { data, error } = await supabase.from('products').select('id, name, price, stock_quantity');
         if (error) throw error;
         return data;
       },
@@ -58,24 +60,36 @@ import {
   
     const handleAddProduct = (productId: string, quantity: number) => {
       const product = products.find(p => p.id === productId);
-      if (product && quantity > 0) {
-        setSelectedProducts((prev) => [
-          ...prev,
-          {
-            productId: product.id,
-            productName: product.name,
-            price: product.price,
-            quantity,
-            total: product.price * quantity,
-          }
-        ]);
-        setTotalAmount((prev) => prev + product.price * quantity);
+  
+      if (product) {
+        if (quantity > product.stock_quantity) {
+          setStockError("Quantidade insuficiente em estoque.");
+          return;
+        } else {
+          setStockError(""); // Clear the stock error
+          setSelectedProducts(prev => [
+            ...prev,
+            {
+              productId: product.id,
+              productName: product.name,
+              price: product.price,
+              quantity,
+              total: product.price * quantity,
+            },
+          ]);
+          setTotalAmount(prev => prev + product.price * quantity);
+        }
       }
     };
   
     const handleSubmit = async (event: React.FormEvent) => {
       event.preventDefault();
-      
+  
+      if (!selectedCustomer || !selectedPaymentMethod || selectedProducts.length === 0) {
+        toast.error("Preencha todos os campos obrigatórios.");
+        return;
+      }
+  
       // Process sale data
       const saleData = {
         customer_id: selectedCustomer,
@@ -91,6 +105,7 @@ import {
       if (error) {
         console.error('Error creating sale:', error);
       } else {
+        toast.success("Venda registrada com sucesso!");
         setOpen(false); // Close the dialog on success
       }
     };
@@ -151,12 +166,8 @@ import {
                 <div className="col-span-5">
                   <select
                     className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                    onChange={(e) => handleAddProduct(e.target.value, quantity)}
                     required
-                    onChange={(e) => {
-                      const productId = e.target.value;
-                      const quantity = 1; // Default quantity for simplicity
-                      handleAddProduct(productId, quantity);
-                    }}
                   >
                     <option>Selecione um produto</option>
                     {products.map((product) => (
@@ -166,44 +177,52 @@ import {
                     ))}
                   </select>
                 </div>
-                <div className="col-span-2">
-                  <input
-                    type="number"
-                    placeholder="Quantidade"
-                    className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                    onChange={(e) => handleAddProduct(selectedCustomer, Number(e.target.value))}
-                  />
-                </div>
-                <div className="col-span-2">
-                  <input
-                    type="number"
-                    placeholder="Preço"
-                    className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                    disabled
-                    value={totalAmount}
-                  />
-                </div>
-              </div>
-            </div>
   
-            <div className="flex justify-between items-center">
-              <div>
-                <p className="text-lg font-medium">Total: R$ {totalAmount}</p>
+                <div className="col-span-2">
+                  <input
+                    type="number"
+                    value={quantity}
+                    min="1"
+                    className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                    onChange={(e) => setQuantity(Number(e.target.value))}
+                    placeholder="Quantidade"
+                    required
+                  />
+                </div>
+  
+                <div className="col-span-2">
+                  <input
+                    type="number"
+                    className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                    value={totalAmount}
+                    disabled
+                    placeholder="Preço Total"
+                  />
+                </div>
               </div>
-              <div className="flex gap-4">
-                <button
-                  type="button"
-                  onClick={() => setOpen(false)}
-                  className="px-4 py-2 text-gray-700 hover:text-gray-900"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-                >
-                  Finalizar Venda
-                </button>
+  
+              {stockError && <p className="text-red-500">{stockError}</p>}
+  
+              <div className="flex justify-between items-center mt-4">
+                <div>
+                  <p className="text-lg font-medium">Total: R$ {totalAmount.toFixed(2)}</p>
+                </div>
+  
+                <div className="flex gap-4">
+                  <button
+                    type="button"
+                    onClick={() => setOpen(false)}
+                    className="px-4 py-2 text-gray-700 hover:text-gray-900"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                  >
+                    Finalizar Venda
+                  </button>
+                </div>
               </div>
             </div>
           </form>

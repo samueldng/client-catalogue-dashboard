@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -22,7 +22,12 @@ interface SaleFormData {
 }
 
 export function SaleForm({ onSuccess }: SaleFormProps) {
-  const { data: customers } = useQuery({
+  const [products, setProducts] = useState<any[]>([]);
+  const [customers, setCustomers] = useState<any[]>([]);
+  const [stockError, setStockError] = useState<string>("");
+  const [selectedProduct, setSelectedProduct] = useState<any | null>(null);
+
+  const { data: customersData } = useQuery({
     queryKey: ["customers"],
     queryFn: async () => {
       const { data, error } = await supabase.from("customers").select("*");
@@ -31,7 +36,7 @@ export function SaleForm({ onSuccess }: SaleFormProps) {
     },
   });
 
-  const { data: products } = useQuery({
+  const { data: productsData } = useQuery({
     queryKey: ["products"],
     queryFn: async () => {
       const { data, error } = await supabase.from("products").select("*");
@@ -39,6 +44,15 @@ export function SaleForm({ onSuccess }: SaleFormProps) {
       return data;
     },
   });
+
+  useEffect(() => {
+    if (customersData) {
+      setCustomers(customersData);
+    }
+    if (productsData) {
+      setProducts(productsData);
+    }
+  }, [customersData, productsData]);
 
   const form = useForm<SaleFormData>({
     defaultValues: {
@@ -51,6 +65,16 @@ export function SaleForm({ onSuccess }: SaleFormProps) {
   });
 
   const onSubmit = async (data: SaleFormData) => {
+    // Verificar quantidade em estoque antes de prosseguir
+    const productInStock = products.find((product) => product.id === data.product_id);
+    
+    if (productInStock && productInStock.stock_quantity < data.quantity) {
+      setStockError("Quantidade insuficiente no estoque.");
+      return;
+    } else {
+      setStockError("");  // Limpar o erro de estoque se não houver problemas
+    }
+
     try {
       const { error } = await supabase
         .from("sales")
@@ -134,7 +158,16 @@ export function SaleForm({ onSuccess }: SaleFormProps) {
             <FormItem>
               <FormLabel>Produto</FormLabel>
               <FormControl>
-                <Select {...field}>
+                <Select
+                  {...field}
+                  onChange={(e) => {
+                    const selected = products.find(
+                      (product) => product.id === e.target.value
+                    );
+                    setSelectedProduct(selected);
+                    field.onChange(e);
+                  }}
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="Selecione um produto" />
                   </SelectTrigger>
@@ -191,9 +224,13 @@ export function SaleForm({ onSuccess }: SaleFormProps) {
           />
         </div>
 
+        {stockError && <p className="text-red-500">{stockError}</p>}
+
         <div className="flex justify-between items-center">
           <div>
-            <p className="text-lg font-medium">Total: R$ {form.getValues("price") * form.getValues("quantity")}</p>
+            <p className="text-lg font-medium">
+              Total: R$ {form.getValues("price") * form.getValues("quantity")}
+            </p>
           </div>
           <div className="flex gap-4">
             <Button
@@ -203,7 +240,10 @@ export function SaleForm({ onSuccess }: SaleFormProps) {
             >
               Cancelar
             </Button>
-            <Button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+            <Button
+              type="submit"
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+            >
               Finalizar Venda
             </Button>
           </div>
