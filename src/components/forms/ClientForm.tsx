@@ -95,7 +95,7 @@ export function ClientForm({ initialData, onSuccess }: ClientFormProps) {
                   className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                 />
               </FormControl>
-              <FormMessage className="text-sm text-red-600" />
+              <FormMessage className="text-sm text-red-600 mt-1" />
             </FormItem>
           )}
         />
@@ -114,7 +114,7 @@ export function ClientForm({ initialData, onSuccess }: ClientFormProps) {
                   className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                 />
               </FormControl>
-              <FormMessage className="text-sm text-red-600" />
+              <FormMessage className="text-sm text-red-600 mt-1" />
             </FormItem>
           )}
         />
@@ -133,7 +133,7 @@ export function ClientForm({ initialData, onSuccess }: ClientFormProps) {
                   className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                 />
               </FormControl>
-              <FormMessage className="text-sm text-red-600" />
+              <FormMessage className="text-sm text-red-600 mt-1" />
             </FormItem>
           )}
         />
@@ -152,7 +152,7 @@ export function ClientForm({ initialData, onSuccess }: ClientFormProps) {
                   className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                 />
               </FormControl>
-              <FormMessage className="text-sm text-red-600" />
+              <FormMessage className="text-sm text-red-600 mt-1" />
             </FormItem>
           )}
         />
@@ -161,7 +161,7 @@ export function ClientForm({ initialData, onSuccess }: ClientFormProps) {
         <Button
           type="submit"
           disabled={form.formState.isSubmitting}
-          className="w-full bg-blue-600 text-white rounded-lg hover:bg-blue-700 mt-4"
+          className="w-full bg-blue-600 text-white rounded-lg hover:bg-blue-700 mt-4 py-3"
         >
           {initialData ? "Atualizar" : "Criar"} Cliente
         </Button>

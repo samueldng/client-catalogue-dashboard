@@ -53,7 +53,7 @@ export function ClientDialog({ initialData, trigger }: ClientDialogProps) {
                 <th className="text-left py-3 px-4">Email</th>
                 <th className="text-left py-3 px-4">Telefone</th>
                 <th className="text-left py-3 px-4">Endereço</th>
-                <th className="text-right py-3 px-4">Ações</th>
+                <th className="text-left py-3 px-4">Ações</th>
               </tr>
             </thead>
             <tbody>
@@ -64,16 +64,16 @@ export function ClientDialog({ initialData, trigger }: ClientDialogProps) {
                   <td className="py-3 px-4">+55 11 91234-5678</td>
                   <td className="py-3 px-4">Rua Exemplo, 123</td>
                   <td className="py-3 px-4">
-                    <div className="flex gap-2 justify-end">
+                    <div className="flex gap-2 justify-start"> {/* Alinhando à esquerda */}
                       {/* Ação de Editar */}
                       <button
-                        className="text-blue-600 hover:text-blue-800"
+                        className="bg-blue-600 text-white hover:bg-blue-700 px-3 py-2 rounded-md"
                         onClick={() => setShowForm(true)} // Ao clicar, abrir o formulário
                       >
                         <Edit className="w-5 h-5" />
                       </button>
                       {/* Ação de Excluir */}
-                      <button className="text-red-600 hover:text-red-800">
+                      <button className="bg-red-600 text-white hover:bg-red-700 px-3 py-2 rounded-md">
                         <Trash2 className="w-5 h-5" />
                       </button>
                     </div>
