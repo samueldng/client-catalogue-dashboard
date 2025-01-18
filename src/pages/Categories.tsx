@@ -18,12 +18,12 @@ import {
   AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
-  AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
+import { useState } from "react";
 
 const Categories = () => {
   const queryClient = useQueryClient();
@@ -41,6 +41,9 @@ const Categories = () => {
     },
   });
 
+  const [searchQuery, setSearchQuery] = useState(""); // Estado para armazenar o termo de busca
+
+  // Função para excluir uma categoria
   const handleDelete = async (id: string) => {
     try {
       const { error } = await supabase
@@ -58,6 +61,14 @@ const Categories = () => {
     }
   };
 
+  // Filtra as categorias com base no nome ou descrição
+  const filteredCategories = categories?.filter((category) => {
+    return (
+      category.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      category.description.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  });
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -65,14 +76,25 @@ const Categories = () => {
         <CategoryDialog />
       </div>
       
+      {/* Barra de busca */}
+      <div className="relative mb-4">
+        <input
+          type="text"
+          placeholder="Buscar categorias..."
+          className="w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+        />
+      </div>
+
       <Card className="p-6">
         {isLoading ? (
           <div className="text-center text-gray-500 py-6">
             Carregando categorias...
           </div>
-        ) : !categories?.length ? (
+        ) : !filteredCategories?.length ? (
           <div className="text-center text-gray-500 py-6">
-            Nenhuma categoria cadastrada
+            Nenhuma categoria encontrada
           </div>
         ) : (
           <Table>
@@ -84,7 +106,7 @@ const Categories = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {categories.map((category) => (
+              {filteredCategories.map((category) => (
                 <TableRow key={category.id}>
                   <TableCell>{category.name}</TableCell>
                   <TableCell>{category.description}</TableCell>
