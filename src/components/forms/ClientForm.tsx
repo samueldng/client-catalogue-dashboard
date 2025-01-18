@@ -57,19 +57,19 @@ export function ClientForm({ initialData, onSuccess }: ClientFormProps) {
     try {
       if (initialData?.id) {
         const { error } = await supabase
-          .from("customers") // Aqui foi corrigido para "customers"
+          .from("customers")
           .update(data)
           .eq("id", initialData.id);
 
         if (error) throw error;
         toast.success("Cliente atualizado com sucesso!");
       } else {
-        const { error } = await supabase.from("customers").insert(data); // Alterado para "customers"
+        const { error } = await supabase.from("customers").insert(data);
         if (error) throw error;
         toast.success("Cliente criado com sucesso!");
       }
 
-      queryClient.invalidateQueries({ queryKey: ["customers"] }); // Corrigido para "customers"
+      queryClient.invalidateQueries({ queryKey: ["customers"] });
       form.reset();
       onSuccess?.();
     } catch (error) {
@@ -80,64 +80,89 @@ export function ClientForm({ initialData, onSuccess }: ClientFormProps) {
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        {/* Nome */}
         <FormField
           control={form.control}
           name="name"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Nome</FormLabel>
+              <FormLabel className="text-sm text-gray-700">Nome</FormLabel>
               <FormControl>
-                <Input {...field} />
+                <Input
+                  {...field}
+                  placeholder="Digite o nome do cliente"
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                />
               </FormControl>
-              <FormMessage />
+              <FormMessage className="text-sm text-red-600" />
             </FormItem>
           )}
         />
 
+        {/* Email */}
         <FormField
           control={form.control}
           name="email"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Email</FormLabel>
+              <FormLabel className="text-sm text-gray-700">Email</FormLabel>
               <FormControl>
-                <Input {...field} />
+                <Input
+                  {...field}
+                  placeholder="Digite o email"
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                />
               </FormControl>
-              <FormMessage />
+              <FormMessage className="text-sm text-red-600" />
             </FormItem>
           )}
         />
 
+        {/* Telefone */}
         <FormField
           control={form.control}
           name="phone"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Telefone</FormLabel>
+              <FormLabel className="text-sm text-gray-700">Telefone</FormLabel>
               <FormControl>
-                <Input {...field} />
+                <Input
+                  {...field}
+                  placeholder="Digite o telefone"
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                />
               </FormControl>
-              <FormMessage />
+              <FormMessage className="text-sm text-red-600" />
             </FormItem>
           )}
         />
 
+        {/* Endereço */}
         <FormField
           control={form.control}
           name="address"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Endereço</FormLabel>
+              <FormLabel className="text-sm text-gray-700">Endereço</FormLabel>
               <FormControl>
-                <Input {...field} />
+                <Input
+                  {...field}
+                  placeholder="Digite o endereço"
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                />
               </FormControl>
-              <FormMessage />
+              <FormMessage className="text-sm text-red-600" />
             </FormItem>
           )}
         />
 
-        <Button type="submit" disabled={form.formState.isSubmitting}>
+        {/* Botão de Submissão */}
+        <Button
+          type="submit"
+          disabled={form.formState.isSubmitting}
+          className="w-full bg-blue-600 text-white rounded-lg hover:bg-blue-700 mt-4"
+        >
           {initialData ? "Atualizar" : "Criar"} Cliente
         </Button>
       </form>

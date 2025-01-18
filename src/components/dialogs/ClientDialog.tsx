@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Plus, Search, Edit, Trash2 } from "lucide-react";
 import { ClientForm } from "@/components/forms/ClientForm"; // Importando o formulário de cliente
 
 interface ClientDialogProps {
@@ -12,41 +11,92 @@ interface ClientDialogProps {
     phone: string;
     address: string;
   };
-  trigger?: React.ReactNode; // Permite passar um botão personalizado para abrir o modal
+  trigger?: React.ReactNode;
 }
 
 export function ClientDialog({ initialData, trigger }: ClientDialogProps) {
-  const [open, setOpen] = useState(false);
-
-  // Função para alternar o estado de abertura do modal
-  const handleDialogOpen = () => {
-    setOpen(true);
-  };
-
-  const handleDialogClose = () => {
-    setOpen(false);
-  };
+  const [showForm, setShowForm] = useState(false);
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      {/* Usando DialogTrigger com o trigger passado como prop ou um botão padrão */}
-      <DialogTrigger asChild>
-        {trigger || (
-          <Button onClick={handleDialogOpen}>
-            <Plus className="h-4 w-4 mr-2" />
-            Novo Cliente
-          </Button>
-        )}
-      </DialogTrigger>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>{initialData ? "Editar" : "Novo"} Cliente</DialogTitle>
-        </DialogHeader>
-        <ClientForm
-          initialData={initialData}
-          onSuccess={handleDialogClose} // Fecha o diálogo após o sucesso
-        />
-      </DialogContent>
-    </Dialog>
+    <div className="space-y-6">
+      {/* Cabeçalho e Botão para abrir o modal */}
+      <div className="flex justify-between items-center">
+        <h1 className="text-3xl font-bold text-gray-900">Clientes</h1>
+        <button
+          onClick={() => setShowForm(true)}
+          className="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-blue-700"
+        >
+          <Plus className="w-5 h-5" />
+          Novo Cliente
+        </button>
+      </div>
+
+      {/* Campo de busca */}
+      <div className="bg-white rounded-lg shadow-md p-6">
+        <div className="flex gap-4 mb-6">
+          <div className="flex-1 relative">
+            <Search className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Buscar clientes..."
+              className="w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+        </div>
+
+        {/* Tabela de Clientes */}
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="border-b">
+                <th className="text-left py-3 px-4">Nome</th>
+                <th className="text-left py-3 px-4">Email</th>
+                <th className="text-left py-3 px-4">Telefone</th>
+                <th className="text-left py-3 px-4">Endereço</th>
+                <th className="text-right py-3 px-4">Ações</th>
+              </tr>
+            </thead>
+            <tbody>
+              {[1, 2, 3].map((_, index) => (
+                <tr key={index} className="border-b hover:bg-gray-50">
+                  <td className="py-3 px-4">Cliente {index + 1}</td>
+                  <td className="py-3 px-4">cliente{index + 1}@example.com</td>
+                  <td className="py-3 px-4">+55 11 91234-5678</td>
+                  <td className="py-3 px-4">Rua Exemplo, 123</td>
+                  <td className="py-3 px-4">
+                    <div className="flex gap-2 justify-end">
+                      {/* Ação de Editar */}
+                      <button
+                        className="text-blue-600 hover:text-blue-800"
+                        onClick={() => setShowForm(true)} // Ao clicar, abrir o formulário
+                      >
+                        <Edit className="w-5 h-5" />
+                      </button>
+                      {/* Ação de Excluir */}
+                      <button className="text-red-600 hover:text-red-800">
+                        <Trash2 className="w-5 h-5" />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Modal de Formulário de Novo Cliente */}
+      {showForm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+            <h2 className="text-xl font-semibold mb-4">{initialData ? "Editar" : "Novo"} Cliente</h2>
+            <ClientForm
+              initialData={initialData}
+              onSuccess={() => setShowForm(false)} // Fecha o formulário após sucesso
+            />
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
