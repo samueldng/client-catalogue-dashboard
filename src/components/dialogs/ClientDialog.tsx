@@ -16,6 +16,19 @@ interface ClientDialogProps {
 
 export function ClientDialog({ initialData, trigger }: ClientDialogProps) {
   const [showForm, setShowForm] = useState(false);
+  const [currentClient, setCurrentClient] = useState(initialData); // Armazena o cliente atual que está sendo editado
+
+  // Função para abrir o formulário de edição com dados de um cliente
+  const openEditForm = (client: ClientDialogProps['initialData']) => {
+    setCurrentClient(client);
+    setShowForm(true);
+  };
+
+  // Função para abrir o formulário de criação (sem dados)
+  const openCreateForm = () => {
+    setCurrentClient(undefined); // Limpa os dados do cliente
+    setShowForm(true);
+  };
 
   return (
     <div className="space-y-6">
@@ -23,7 +36,7 @@ export function ClientDialog({ initialData, trigger }: ClientDialogProps) {
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold text-gray-900">Clientes</h1>
         <button
-          onClick={() => setShowForm(true)}
+          onClick={openCreateForm} // Ao clicar em "Novo Cliente", abre o formulário de criação
           className="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-blue-700"
         >
           <Plus className="w-5 h-5" />
@@ -68,7 +81,13 @@ export function ClientDialog({ initialData, trigger }: ClientDialogProps) {
                       {/* Ação de Editar */}
                       <button
                         className="bg-blue-600 text-white hover:bg-blue-700 px-3 py-2 rounded-md"
-                        onClick={() => setShowForm(true)} // Ao clicar, abrir o formulário
+                        onClick={() => openEditForm({ 
+                          id: `${index + 1}`, 
+                          name: `Cliente ${index + 1}`,
+                          email: `cliente${index + 1}@example.com`, 
+                          phone: `+55 11 91234-5678`, 
+                          address: `Rua Exemplo, 123`
+                        })} // Abre o formulário de edição com dados do cliente
                       >
                         <Edit className="w-5 h-5" />
                       </button>
@@ -89,9 +108,9 @@ export function ClientDialog({ initialData, trigger }: ClientDialogProps) {
       {showForm && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
           <div className="bg-white rounded-lg p-6 w-full max-w-md">
-            <h2 className="text-xl font-semibold mb-4">{initialData ? "Editar" : "Novo"} Cliente</h2>
+            <h2 className="text-xl font-semibold mb-4">{currentClient ? "Editar" : "Novo"} Cliente</h2>
             <ClientForm
-              initialData={initialData}
+              initialData={currentClient} // Passando os dados do cliente para o formulário
               onSuccess={() => setShowForm(false)} // Fecha o formulário após sucesso
             />
           </div>

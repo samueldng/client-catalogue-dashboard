@@ -18,7 +18,7 @@ import { toast } from "sonner";
 const Customers = () => {
   const [isFormOpen, setIsFormOpen] = useState(false); // Estado para controlar a visibilidade do formulário
   const [searchQuery, setSearchQuery] = useState(""); // Estado para armazenar o termo de busca
-  const [editClientData, setEditClientData] = useState(null); // Estado para armazenar dados do cliente a ser editado
+  const [editClientData, setEditClientData] = useState<any>(null); // Estado para armazenar dados do cliente a ser editado
   const queryClient = useQueryClient();
 
   const { data: customers, isLoading } = useQuery({
@@ -82,7 +82,7 @@ const Customers = () => {
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold text-gray-900">Clientes</h1>
         <Button
-          onClick={() => openForm()}
+          onClick={() => openForm()} // Abre o formulário em modo de criação
           className="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-blue-700"
         >
           <Plus className="w-5 h-5" />
@@ -91,7 +91,19 @@ const Customers = () => {
       </div>
 
       {/* Exibe o formulário de cliente quando o estado isFormOpen é true */}
-      {isFormOpen && <ClientForm initialData={editClientData} onSuccess={handleFormSuccess} />}
+      {isFormOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+            <h2 className="text-xl font-semibold mb-4">
+              {editClientData ? "Editar Cliente" : "Novo Cliente"}
+            </h2>
+            <ClientForm
+              initialData={editClientData}
+              onSuccess={handleFormSuccess} // Passa a função para fechar o modal após sucesso
+            />
+          </div>
+        </div>
+      )}
 
       {/* Barra de busca */}
       <div className="relative">
@@ -135,13 +147,13 @@ const Customers = () => {
                   <TableCell>
                     <div className="flex gap-2 justify-start"> {/* Alinhando à esquerda */}
                       <Button
-                        onClick={() => openForm(customer)}
+                        onClick={() => openForm(customer)} // Abre o formulário de edição
                         className="bg-blue-600 text-white hover:bg-blue-700 px-3 py-2 rounded-md"
                       >
                         <Edit className="w-5 h-5" />
                       </Button>
                       <Button
-                        onClick={() => handleDelete(customer.id)}
+                        onClick={() => handleDelete(customer.id)} // Chama a função de exclusão
                         className="bg-red-600 text-white hover:bg-red-700 px-3 py-2 rounded-md"
                       >
                         <Trash2 className="w-5 h-5" />

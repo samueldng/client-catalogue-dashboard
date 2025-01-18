@@ -56,6 +56,7 @@ export function ClientForm({ initialData, onSuccess }: ClientFormProps) {
   const onSubmit = async (data: ClientFormData) => {
     try {
       if (initialData?.id) {
+        // Atualização de cliente
         const { error } = await supabase
           .from("customers")
           .update(data)
@@ -64,14 +65,16 @@ export function ClientForm({ initialData, onSuccess }: ClientFormProps) {
         if (error) throw error;
         toast.success("Cliente atualizado com sucesso!");
       } else {
+        // Criação de novo cliente
         const { error } = await supabase.from("customers").insert(data);
         if (error) throw error;
         toast.success("Cliente criado com sucesso!");
       }
 
+      // Invalida as queries para recarregar a lista de clientes
       queryClient.invalidateQueries({ queryKey: ["customers"] });
       form.reset();
-      onSuccess?.();
+      onSuccess?.(); // Chama o callback de sucesso
     } catch (error) {
       console.error(error);
       toast.error("Erro ao salvar cliente");
