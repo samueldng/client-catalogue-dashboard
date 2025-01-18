@@ -2,7 +2,6 @@ import * as React from "react"
 import * as NavigationMenuPrimitive from "@radix-ui/react-navigation-menu"
 import { cva } from "class-variance-authority"
 import { ChevronDown } from "lucide-react"
-
 import { cn } from "@/lib/utils"
 
 const NavigationMenu = React.forwardRef<
@@ -30,7 +29,7 @@ const NavigationMenuList = React.forwardRef<
   <NavigationMenuPrimitive.List
     ref={ref}
     className={cn(
-      "group flex flex-1 list-none items-center justify-center space-x-1",
+      "group flex flex-1 list-none items-center justify-center space-x-1 md:space-x-4",
       className
     )}
     {...props}
@@ -115,6 +114,44 @@ const NavigationMenuIndicator = React.forwardRef<
 NavigationMenuIndicator.displayName =
   NavigationMenuPrimitive.Indicator.displayName
 
+// Menu Hambúrguer (mobile) e Menu Responsivo
+const ResponsiveMenu = () => {
+  const [isOpen, setIsOpen] = React.useState(false)
+
+  const toggleMenu = () => setIsOpen(!isOpen)
+
+  return (
+    <div>
+      {/* Botão de Menu Hambúrguer para dispositivos móveis */}
+      <div className="md:hidden">
+        <button onClick={toggleMenu} className="p-2">
+          <span className="block w-6 h-0.5 bg-black mb-1"></span>
+          <span className="block w-6 h-0.5 bg-black mb-1"></span>
+          <span className="block w-6 h-0.5 bg-black mb-1"></span>
+        </button>
+      </div>
+
+      {/* Menu de Navegação */}
+      <NavigationMenu className={`md:flex ${isOpen ? 'block' : 'hidden'}`}>
+        <NavigationMenuList className="flex flex-col md:flex-row space-y-4 md:space-y-0">
+          <NavigationMenuItem>
+            <NavigationMenuLink href="#">Home</NavigationMenuLink>
+          </NavigationMenuItem>
+          <NavigationMenuItem>
+            <NavigationMenuLink href="#">About</NavigationMenuLink>
+          </NavigationMenuItem>
+          <NavigationMenuItem>
+            <NavigationMenuLink href="#">Services</NavigationMenuLink>
+          </NavigationMenuItem>
+          <NavigationMenuItem>
+            <NavigationMenuLink href="#">Contact</NavigationMenuLink>
+          </NavigationMenuItem>
+        </NavigationMenuList>
+      </NavigationMenu>
+    </div>
+  )
+}
+
 export {
   navigationMenuTriggerStyle,
   NavigationMenu,
@@ -125,4 +162,5 @@ export {
   NavigationMenuLink,
   NavigationMenuIndicator,
   NavigationMenuViewport,
+  ResponsiveMenu,
 }
