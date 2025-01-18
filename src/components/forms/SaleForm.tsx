@@ -102,6 +102,7 @@ export function SaleForm({ onSuccess }: SaleFormProps) {
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+        {/* Cliente */}
         <FormField
           control={form.control}
           name="customer_id"
@@ -127,6 +128,7 @@ export function SaleForm({ onSuccess }: SaleFormProps) {
           )}
         />
 
+        {/* Forma de Pagamento */}
         <FormField
           control={form.control}
           name="payment_method"
@@ -151,6 +153,7 @@ export function SaleForm({ onSuccess }: SaleFormProps) {
           )}
         />
 
+        {/* Produto */}
         <FormField
           control={form.control}
           name="product_id"
@@ -185,6 +188,7 @@ export function SaleForm({ onSuccess }: SaleFormProps) {
           )}
         />
 
+        {/* Quantidade e Preço */}
         <div className="grid grid-cols-2 gap-4">
           <FormField
             control={form.control}
@@ -196,7 +200,10 @@ export function SaleForm({ onSuccess }: SaleFormProps) {
                   <Input
                     type="number"
                     {...field}
-                    onChange={(e) => field.onChange(Number(e.target.value))}
+                    onChange={(e) => {
+                      const value = Math.max(1, Number(e.target.value)); // Garantir que a quantidade seja ao menos 1
+                      field.onChange(value);
+                    }}
                   />
                 </FormControl>
                 <FormMessage />
@@ -215,7 +222,9 @@ export function SaleForm({ onSuccess }: SaleFormProps) {
                     type="number"
                     step="0.01"
                     {...field}
+                    value={selectedProduct?.price || 0} // Preço vem do produto selecionado
                     onChange={(e) => field.onChange(Number(e.target.value))}
+                    readOnly={!selectedProduct} // Não permite alteração manual se nenhum produto foi selecionado
                   />
                 </FormControl>
                 <FormMessage />
@@ -226,6 +235,7 @@ export function SaleForm({ onSuccess }: SaleFormProps) {
 
         {stockError && <p className="text-red-500">{stockError}</p>}
 
+        {/* Total */}
         <div className="flex justify-between items-center">
           <div>
             <p className="text-lg font-medium">
