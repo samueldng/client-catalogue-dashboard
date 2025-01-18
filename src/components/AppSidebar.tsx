@@ -41,13 +41,13 @@ export function AppSidebar() {
     <div className="relative">
       {/* Botão hamburger (apenas em telas pequenas) */}
       <Button
-        className="lg:hidden absolute top-4 left-4 z-50" // Colocar o botão acima da sidebar
+        className="lg:hidden absolute top-4 right-4 z-50" // Colocar o botão acima da sidebar na lateral direita
         onClick={toggleMobileMenu}
       >
         {isMobileMenuOpen ? <X /> : <Menu />}
       </Button>
 
-      {/* Sidebar para Desktop */}
+      {/* Sidebar para Desktop (Agora à direita) */}
       <Sidebar className="lg:block hidden">
         <SidebarContent>
           <SidebarGroup>
@@ -70,7 +70,7 @@ export function AppSidebar() {
         </SidebarContent>
       </Sidebar>
 
-      {/* Sidebar para Mobile */}
+      {/* Sidebar para Mobile (Agora à direita) */}
       <div
         className={`lg:hidden fixed inset-0 bg-black bg-opacity-50 z-40 transition-opacity duration-300 ${
           isMobileMenuOpen ? "opacity-100" : "opacity-0 pointer-events-none"
