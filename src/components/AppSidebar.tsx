@@ -20,6 +20,7 @@ import {
 import { Link } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile"; // Importando o hook useIsMobile
 
+// Definindo os itens do menu
 const menuItems = [
   { title: "Dashboard", icon: LayoutDashboard, path: "/" },
   { title: "Clientes", icon: Users, path: "/customers" },
@@ -33,6 +34,7 @@ export function AppSidebar() {
   const isMobile = useIsMobile();  // Verifica se o dispositivo é móvel
   const [isSidebarOpen, setIsSidebarOpen] = useState(false); // Estado para controlar o menu lateral
 
+  // Função que alterna o estado de visibilidade do sidebar
   const toggleSidebar = () => {
     setIsSidebarOpen(!isSidebarOpen);
   };
@@ -61,7 +63,7 @@ export function AppSidebar() {
         </SidebarContent>
       </Sidebar>
 
-      {/* Botão hamburger para dispositivos móveis */}
+      {/* Botão hamburger visível apenas no mobile */}
       {isMobile && (
         <button
           className="lg:hidden fixed top-4 left-4 p-3 bg-primary text-white rounded-full"
