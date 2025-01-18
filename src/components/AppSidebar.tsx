@@ -1,8 +1,22 @@
-import React, { useState } from "react";
-import { LayoutDashboard, Users, Package, ShoppingCart, AlertCircle, Tags } from "lucide-react";
-import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupLabel, SidebarGroupContent, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from "@/components/ui/sidebar";
+import {
+  LayoutDashboard,
+  Users,
+  Package,
+  ShoppingCart,
+  AlertCircle,
+  Tags,
+} from "lucide-react";
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+} from "@/components/ui/sidebar";
 import { Link } from "react-router-dom";
-import { useIsMobile } from "@/hooks/use-mobile"; // Importando o hook para detectar dispositivos móveis
 
 const menuItems = [
   { title: "Dashboard", icon: LayoutDashboard, path: "/" },
@@ -14,46 +28,27 @@ const menuItems = [
 ];
 
 export function AppSidebar() {
-  const isMobile = useIsMobile();  // Verifica se o dispositivo é móvel
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);  // Estado para controlar a visibilidade do menu
-
-  const toggleSidebar = () => {
-    setIsSidebarOpen(!isSidebarOpen); // Alternar visibilidade do menu
-  };
-
   return (
-    <div className={`flex ${isMobile && !isSidebarOpen ? "hidden" : "block"} lg:block`}>
-      <Sidebar className={isMobile && !isSidebarOpen ? "hidden" : ""}>
-        <SidebarContent>
-          <SidebarGroup>
-            <SidebarGroupLabel>Menu</SidebarGroupLabel>
-            <SidebarGroupContent>
-              <SidebarMenu>
-                {menuItems.map((item) => (
-                  <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton asChild>
-                      <Link to={item.path} className="flex items-center gap-2">
-                        <item.icon className="h-5 w-5" />
-                        <span>{item.title}</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))}
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
-        </SidebarContent>
-      </Sidebar>
-
-      {/* Botão Hamburger para dispositivos móveis */}
-      {isMobile && (
-        <button
-          className="lg:hidden fixed top-4 left-4 p-3 bg-primary text-white rounded-full z-50"
-          onClick={toggleSidebar}
-        >
-          ☰
-        </button>
-      )}
-    </div>
+    <Sidebar>
+      <SidebarContent>
+        <SidebarGroup>
+          <SidebarGroupLabel>Menu</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {menuItems.map((item) => (
+                <SidebarMenuItem key={item.title}>
+                  <SidebarMenuButton asChild>
+                    <Link to={item.path} className="flex items-center gap-2">
+                      <item.icon className="h-5 w-5" />
+                      <span>{item.title}</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+      </SidebarContent>
+    </Sidebar>
   );
 }
