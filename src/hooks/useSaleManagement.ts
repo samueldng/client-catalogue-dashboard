@@ -119,7 +119,10 @@ export function useSaleManagement() {
         const { error: stockError } = await supabase
           .from('products')
           .update({ 
-            stock_quantity: supabase.sql`stock_quantity - ${product.quantity}`
+            stock_quantity: supabase.rpc('decrement_stock', { 
+              p_id: product.productId, 
+              qty: product.quantity 
+            })
           })
           .eq('id', product.productId);
 
