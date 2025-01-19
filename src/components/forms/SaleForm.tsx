@@ -22,12 +22,10 @@ interface SaleFormData {
 }
 
 export function SaleForm({ onSuccess }: SaleFormProps) {
-  const [products, setProducts] = useState<any[]>([]);
-  const [customers, setCustomers] = useState<any[]>([]);
-  const [stockError, setStockError] = useState<string>("");
   const [selectedProduct, setSelectedProduct] = useState<any | null>(null);
+  const [stockError, setStockError] = useState<string>("");
 
-  const { data: customersData } = useQuery({
+  const { data: customers } = useQuery({
     queryKey: ["customers"],
     queryFn: async () => {
       const { data, error } = await supabase.from("customers").select("*");
@@ -36,7 +34,7 @@ export function SaleForm({ onSuccess }: SaleFormProps) {
     },
   });
 
-  const { data: productsData } = useQuery({
+  const { data: products } = useQuery({
     queryKey: ["products"],
     queryFn: async () => {
       const { data, error } = await supabase.from("products").select("*");
@@ -44,15 +42,6 @@ export function SaleForm({ onSuccess }: SaleFormProps) {
       return data;
     },
   });
-
-  useEffect(() => {
-    if (customersData) {
-      setCustomers(customersData);
-    }
-    if (productsData) {
-      setProducts(productsData);
-    }
-  }, [customersData, productsData]);
 
   const form = useForm<SaleFormData>({
     defaultValues: {
@@ -65,15 +54,13 @@ export function SaleForm({ onSuccess }: SaleFormProps) {
   });
 
   const onSubmit = async (data: SaleFormData) => {
-    // Verificar quantidade em estoque antes de prosseguir
-    const productInStock = products.find((product) => product.id === data.product_id);
+    const productInStock = products?.find((product) => product.id === data.product_id);
     
     if (productInStock && productInStock.stock_quantity < data.quantity) {
       setStockError("Quantidade insuficiente no estoque.");
       return;
-    } else {
-      setStockError("");  // Limpar o erro de estoque se não houver problemas
     }
+    setStockError("");
 
     try {
       const { error } = await supabase
@@ -85,7 +72,7 @@ export function SaleForm({ onSuccess }: SaleFormProps) {
           quantity: data.quantity,
           price: data.price,
           total_amount: data.price * data.quantity,
-          payment_status: "pending", // Assuming new sales are pending
+          payment_status: "pending",
         });
 
       if (error) throw error;
@@ -102,93 +89,89 @@ export function SaleForm({ onSuccess }: SaleFormProps) {
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-        {/* Cliente */}
         <FormField
           control={form.control}
           name="customer_id"
           render={({ field }) => (
             <FormItem>
               <FormLabel>Cliente</FormLabel>
-              <FormControl>
-                <Select {...field}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione um cliente" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {customers?.map((customer) => (
-                      <SelectItem key={customer.id} value={customer.id}>
-                        {customer.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </FormControl>
+              <Select 
+                onValueChange={field.onChange} 
+                defaultValue={field.value}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione um cliente" />
+                </SelectTrigger>
+                <SelectContent>
+                  {customers?.map((customer) => (
+                    <SelectItem key={customer.id} value={customer.id}>
+                      {customer.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
               <FormMessage />
             </FormItem>
           )}
         />
 
-        {/* Forma de Pagamento */}
         <FormField
           control={form.control}
           name="payment_method"
           render={({ field }) => (
             <FormItem>
               <FormLabel>Forma de Pagamento</FormLabel>
-              <FormControl>
-                <Select {...field}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione a forma de pagamento" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Dinheiro">Dinheiro</SelectItem>
-                    <SelectItem value="Cartão de Crédito">Cartão de Crédito</SelectItem>
-                    <SelectItem value="PIX">PIX</SelectItem>
-                    <SelectItem value="A Prazo">A Prazo</SelectItem>
-                  </SelectContent>
-                </Select>
-              </FormControl>
+              <Select 
+                onValueChange={field.onChange} 
+                defaultValue={field.value}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione a forma de pagamento" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="cash">Dinheiro</SelectItem>
+                  <SelectItem value="credit_card">Cartão de Crédito</SelectItem>
+                  <SelectItem value="pix">PIX</SelectItem>
+                  <SelectItem value="installments">A Prazo</SelectItem>
+                </SelectContent>
+              </Select>
               <FormMessage />
             </FormItem>
           )}
         />
 
-        {/* Produto */}
         <FormField
           control={form.control}
           name="product_id"
           render={({ field }) => (
             <FormItem>
               <FormLabel>Produto</FormLabel>
-              <FormControl>
-                <Select
-                  {...field}
-                  onChange={(e) => {
-                    const selected = products.find(
-                      (product) => product.id === e.target.value
-                    );
-                    setSelectedProduct(selected);
-                    field.onChange(e);
-                  }}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione um produto" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {products?.map((product) => (
-                      <SelectItem key={product.id} value={product.id}>
-                        {product.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </FormControl>
+              <Select 
+                onValueChange={(value) => {
+                  const selected = products?.find(
+                    (product) => product.id === value
+                  );
+                  setSelectedProduct(selected);
+                  field.onChange(value);
+                }}
+                defaultValue={field.value}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione um produto" />
+                </SelectTrigger>
+                <SelectContent>
+                  {products?.map((product) => (
+                    <SelectItem key={product.id} value={product.id}>
+                      {product.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
               <FormMessage />
             </FormItem>
           )}
         />
 
-        {/* Quantidade e Preço */}
         <div className="grid grid-cols-2 gap-4">
           <FormField
             control={form.control}
@@ -201,7 +184,7 @@ export function SaleForm({ onSuccess }: SaleFormProps) {
                     type="number"
                     {...field}
                     onChange={(e) => {
-                      const value = Math.max(1, Number(e.target.value)); // Garantir que a quantidade seja ao menos 1
+                      const value = Math.max(1, Number(e.target.value));
                       field.onChange(value);
                     }}
                   />
@@ -222,9 +205,9 @@ export function SaleForm({ onSuccess }: SaleFormProps) {
                     type="number"
                     step="0.01"
                     {...field}
-                    value={selectedProduct?.price || 0} // Preço vem do produto selecionado
+                    value={selectedProduct?.price || 0}
                     onChange={(e) => field.onChange(Number(e.target.value))}
-                    readOnly={!selectedProduct} // Não permite alteração manual se nenhum produto foi selecionado
+                    readOnly={!selectedProduct}
                   />
                 </FormControl>
                 <FormMessage />
@@ -235,7 +218,6 @@ export function SaleForm({ onSuccess }: SaleFormProps) {
 
         {stockError && <p className="text-red-500">{stockError}</p>}
 
-        {/* Total */}
         <div className="flex justify-between items-center">
           <div>
             <p className="text-lg font-medium">
@@ -246,14 +228,11 @@ export function SaleForm({ onSuccess }: SaleFormProps) {
             <Button
               type="button"
               onClick={() => form.reset()}
-              className="px-4 py-2 text-gray-700 hover:text-gray-900"
+              variant="outline"
             >
               Cancelar
             </Button>
-            <Button
-              type="submit"
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-            >
+            <Button type="submit">
               Finalizar Venda
             </Button>
           </div>

@@ -69,7 +69,7 @@ export function useSaleManagement() {
 
   const createSale = async (customerId: string, paymentMethodId: string) => {
     try {
-      // 1. Criar a venda
+      // 1. Create the sale
       const { data: sale, error: saleError } = await supabase
         .from('sales')
         .insert({
@@ -83,7 +83,7 @@ export function useSaleManagement() {
 
       if (saleError) throw saleError;
 
-      // 2. Criar os itens da venda
+      // 2. Create sale items
       const saleItems = selectedProducts.map(product => ({
         sale_id: sale.id,
         product_id: product.productId,
@@ -98,7 +98,7 @@ export function useSaleManagement() {
 
       if (itemsError) throw itemsError;
 
-      // 3. Se for venda parcelada, criar as parcelas
+      // 3. Create installments if applicable
       if (paymentMethodId === 'installments' && installments.length > 0) {
         const installmentRecords = installments.map(inst => ({
           sale_id: sale.id,
@@ -114,12 +114,12 @@ export function useSaleManagement() {
         if (installmentsError) throw installmentsError;
       }
 
-      // 4. Atualizar o estoque dos produtos
+      // 4. Update product stock
       for (const product of selectedProducts) {
         const { error: stockError } = await supabase
           .from('products')
           .update({ 
-            stock_quantity: supabase.raw(`stock_quantity - ${product.quantity}`)
+            stock_quantity: supabase.sql`stock_quantity - ${product.quantity}`
           })
           .eq('id', product.productId);
 
