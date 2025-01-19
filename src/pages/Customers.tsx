@@ -24,9 +24,11 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
+import { useState } from "react";
 
 const Customers = () => {
   const queryClient = useQueryClient();
+  const [search, setSearch] = useState("");
 
   const { data: customers, isLoading } = useQuery({
     queryKey: ["customers"],
@@ -50,6 +52,14 @@ const Customers = () => {
     }
   };
 
+  // Filtra os clientes com base na busca
+  const filteredCustomers = customers?.filter(
+    (customer) =>
+      customer.name?.toLowerCase().includes(search.toLowerCase()) ||
+      customer.email?.toLowerCase().includes(search.toLowerCase()) ||
+      customer.phone?.toLowerCase().includes(search.toLowerCase())
+  );
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -57,14 +67,25 @@ const Customers = () => {
         <ClientDialog />
       </div>
 
+      {/* Campo de busca */}
+      <div className="mb-4">
+        <input
+          type="text"
+          placeholder="Buscar cliente por nome, email ou telefone..."
+          className="w-full px-4 py-2 border rounded-md"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
+      </div>
+
       <Card className="p-6">
         {isLoading ? (
           <div className="text-center text-gray-500 py-6">
             Carregando clientes...
           </div>
-        ) : !customers?.length ? (
+        ) : !filteredCustomers?.length ? (
           <div className="text-center text-gray-500 py-6">
-            Nenhum cliente cadastrado
+            Nenhum cliente encontrado
           </div>
         ) : (
           <Table>
@@ -78,7 +99,7 @@ const Customers = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {customers.map((customer) => (
+              {filteredCustomers.map((customer) => (
                 <TableRow key={customer.id}>
                   <TableCell>{customer.name}</TableCell>
                   <TableCell>{customer.email}</TableCell>
