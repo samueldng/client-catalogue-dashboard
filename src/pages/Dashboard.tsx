@@ -1,7 +1,7 @@
-import { Card } from "@/components/ui/card";
-import { DollarSign, Package, ShoppingCart, Users } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import {
   Table,
   TableBody,
@@ -10,253 +10,155 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-} from "recharts";
-import { ChartContainer, ChartTooltip } from "@/components/ui/chart";
+import { format } from "date-fns";
 
 const Dashboard = () => {
-  const { data: totalProfit } = useQuery({
-    queryKey: ["totalProfit"],
-    queryFn: async () => {
-      const { data, error } = await supabase.rpc("get_total_profit");
-      if (error) throw error;
-      return data || 0;
-    },
-  });
-
-  const { data: totalReceivables } = useQuery({
-    queryKey: ["totalReceivables"],
-    queryFn: async () => {
-      const { data, error } = await supabase.rpc("get_total_receivables");
-      if (error) throw error;
-      return data || 0;
-    },
-  });
-
-  const { data: totalSales } = useQuery({
-    queryKey: ["totalSales"],
-    queryFn: async () => {
-      const { count, error } = await supabase
-        .from("sales")
-        .select("*", { count: "exact", head: true });
-      if (error) throw error;
-      return count || 0;
-    },
-  });
-
-  const { data: totalDebtors } = useQuery({
-    queryKey: ["totalDebtors"],
-    queryFn: async () => {
-      const { count, error } = await supabase
-        .from("sales")
-        .select("*", { count: "exact", head: true })
-        .eq("payment_status", "pending");
-      if (error) throw error;
-      return count || 0;
-    },
-  });
-
-  const { data: totalProducts } = useQuery({
-    queryKey: ["totalProducts"],
-    queryFn: async () => {
-      const { count, error } = await supabase
-        .from("products")
-        .select("*", { count: "exact", head: true });
-      if (error) throw error;
-      return count || 0;
-    },
-  });
-
-  // Nova query para buscar os produtos mais vendidos
-  const { data: topProducts } = useQuery({
-    queryKey: ["topProducts"],
+  // Query for top selling products
+  const { data: topProducts, isLoading: isLoadingProducts } = useQuery({
+    queryKey: ["top-products"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("sale_items")
-        .select(
-          `
+        .select(`
+          product_id,
           quantity,
-          product:products(
+          products (
             name
           )
-        `
-        )
-        .order("quantity", { ascending: false })
+        `)
         .limit(5);
 
       if (error) throw error;
 
-      return data.map((item) => ({
-        name: item.product?.name,
-        quantidade: item.quantity,
+      // Aggregate quantities by product
+      const aggregated = data.reduce((acc: any, item) => {
+        const productName = item.products?.name || "Unknown";
+        acc[productName] = (acc[productName] || 0) + item.quantity;
+        return acc;
+      }, {});
+
+      // Convert to chart format
+      return Object.entries(aggregated).map(([name, quantity]) => ({
+        name,
+        quantity,
       }));
     },
+    staleTime: 1000 * 60 * 5, // Cache for 5 minutes
   });
 
-  // Nova query para buscar as vendas recentes
-  const { data: recentSales } = useQuery({
-    queryKey: ["recentSales"],
+  // Query for recent sales
+  const { data: recentSales, isLoading: isLoadingSales } = useQuery({
+    queryKey: ["recent-sales"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("sales")
-        .select(
-          `
-          id,
-          total_amount,
-          payment_status,
-          created_at,
-          customer:customers(
+        .select(`
+          *,
+          customers (
             name
           )
-        `
-        )
+        `)
         .order("created_at", { ascending: false })
         .limit(5);
 
       if (error) throw error;
       return data;
     },
+    staleTime: 1000 * 60 * 5, // Cache for 5 minutes
   });
 
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat("pt-BR", {
-      style: "currency",
-      currency: "BRL",
-    }).format(value);
-  };
-
-  const formatDate = (date: string) => {
-    return new Date(date).toLocaleDateString("pt-BR");
-  };
+  // Query for total sales amount
+  const { data: totalSales } = useQuery({
+    queryKey: ["total-sales"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .rpc("get_total_receivables");
+      
+      if (error) throw error;
+      return data;
+    },
+    staleTime: 1000 * 60 * 5, // Cache for 5 minutes
+  });
 
   return (
     <div className="space-y-6">
-      <h1 className="text-3xl font-bold text-center">Nell Web</h1>
+      <h1 className="text-3xl font-bold">Dashboard</h1>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <Card className="p-6">
-          <div className="flex items-center gap-4">
-            <div className="p-3 bg-blue-100 rounded-lg">
-              <DollarSign className="h-6 w-6 text-primary" />
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total em Vendas</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {new Intl.NumberFormat('pt-BR', {
+                style: 'currency',
+                currency: 'BRL'
+              }).format(totalSales || 0)}
             </div>
-            <div>
-              <p className="text-sm text-gray-500">Lucro Total</p>
-              <p className="text-2xl font-bold">
-                {formatCurrency(totalProfit || 0)}
-              </p>
-            </div>
-          </div>
-        </Card>
-
-        <Card className="p-6">
-          <div className="flex items-center gap-4">
-            <div className="p-3 bg-green-100 rounded-lg">
-              <ShoppingCart className="h-6 w-6 text-green-600" />
-            </div>
-            <div>
-              <p className="text-sm text-gray-500">Total de Vendas</p>
-              <p className="text-2xl font-bold">{totalSales || 0}</p>
-            </div>
-          </div>
-        </Card>
-
-        <Card className="p-6">
-          <div className="flex items-center gap-4">
-            <div className="p-3 bg-yellow-100 rounded-lg">
-              <Users className="h-6 w-6 text-yellow-600" />
-            </div>
-            <div>
-              <p className="text-sm text-gray-500">Valor a Receber</p>
-              <p className="text-2xl font-bold">
-                {formatCurrency(totalReceivables || 0)}
-              </p>
-            </div>
-          </div>
-        </Card>
-
-        <Card className="p-6">
-          <div className="flex items-center gap-4">
-            <div className="p-3 bg-purple-100 rounded-lg">
-              <Package className="h-6 w-6 text-purple-600" />
-            </div>
-            <div>
-              <p className="text-sm text-gray-500">Total de Produtos</p>
-              <p className="text-2xl font-bold">{totalProducts || 0}</p>
-            </div>
-          </div>
+          </CardContent>
         </Card>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Gráfico de Produtos Mais Vendidos */}
-        <Card className="p-6">
-          <h2 className="text-xl font-bold mb-4">Produtos Mais Vendidos</h2>
-          <div className="h-[300px]">
-            <ChartContainer
-              config={{
-                bar1: {
-                  theme: {
-                    light: "#0ea5e9",
-                    dark: "#0ea5e9",
-                  },
-                },
-              }}
-            >
+      <div className="grid gap-4 md:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <CardTitle>Produtos Mais Vendidos</CardTitle>
+          </CardHeader>
+          <CardContent className="h-[300px]">
+            {isLoadingProducts ? (
+              <div className="flex items-center justify-center h-full">
+                Carregando...
+              </div>
+            ) : (
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={topProducts}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="name" />
                   <YAxis />
-                  <Tooltip content={<ChartTooltip />} />
-                  <Bar dataKey="quantidade" fill="var(--color-bar1)" />
+                  <Tooltip />
+                  <Bar dataKey="quantity" fill="#8884d8" />
                 </BarChart>
               </ResponsiveContainer>
-            </ChartContainer>
-          </div>
+            )}
+          </CardContent>
         </Card>
 
-        {/* Tabela de Vendas Recentes */}
-        <Card className="p-6">
-          <h2 className="text-xl font-bold mb-4">Vendas Recentes</h2>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Data</TableHead>
-                <TableHead>Cliente</TableHead>
-                <TableHead className="text-right">Valor</TableHead>
-                <TableHead>Status</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {recentSales?.map((sale) => (
-                <TableRow key={sale.id}>
-                  <TableCell>{formatDate(sale.created_at)}</TableCell>
-                  <TableCell>{sale.customer?.name}</TableCell>
-                  <TableCell className="text-right">
-                    {formatCurrency(sale.total_amount)}
-                  </TableCell>
-                  <TableCell>
-                    <span
-                      className={`inline-block px-2 py-1 rounded-full text-xs font-semibold ${
-                        sale.payment_status === "paid"
-                          ? "bg-green-100 text-green-800"
-                          : "bg-yellow-100 text-yellow-800"
-                      }`}
-                    >
-                      {sale.payment_status === "paid" ? "Pago" : "Pendente"}
-                    </span>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+        <Card>
+          <CardHeader>
+            <CardTitle>Vendas Recentes</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {isLoadingSales ? (
+              <div className="text-center py-4">Carregando...</div>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Cliente</TableHead>
+                    <TableHead>Valor</TableHead>
+                    <TableHead>Data</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {recentSales?.map((sale) => (
+                    <TableRow key={sale.id}>
+                      <TableCell>{sale.customers?.name}</TableCell>
+                      <TableCell>
+                        {new Intl.NumberFormat('pt-BR', {
+                          style: 'currency',
+                          currency: 'BRL'
+                        }).format(sale.total_amount)}
+                      </TableCell>
+                      <TableCell>
+                        {format(new Date(sale.created_at), 'dd/MM/yyyy')}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+          </CardContent>
         </Card>
       </div>
     </div>

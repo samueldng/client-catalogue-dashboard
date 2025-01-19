@@ -24,7 +24,9 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import { useState } from "react";
+import { useState, useMemo } from "react";
+import { Input } from "@/components/ui/input";
+import debounce from "lodash/debounce";
 
 const Customers = () => {
   const queryClient = useQueryClient();
@@ -33,10 +35,15 @@ const Customers = () => {
   const { data: customers, isLoading } = useQuery({
     queryKey: ["customers"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("customers").select("*");
+      const { data, error } = await supabase
+        .from("customers")
+        .select("*")
+        .order("name");
+      
       if (error) throw error;
       return data;
     },
+    staleTime: 1000 * 60 * 5, // Cache for 5 minutes
   });
 
   const handleDelete = async (id: string) => {
@@ -52,13 +59,25 @@ const Customers = () => {
     }
   };
 
-  // Filtra os clientes com base na busca
-  const filteredCustomers = customers?.filter(
-    (customer) =>
-      customer.name?.toLowerCase().includes(search.toLowerCase()) ||
-      customer.email?.toLowerCase().includes(search.toLowerCase()) ||
-      customer.phone?.toLowerCase().includes(search.toLowerCase())
+  // Memoized search function
+  const debouncedSearch = useMemo(
+    () => debounce((value: string) => setSearch(value), 300),
+    []
   );
+
+  // Memoized filtered customers
+  const filteredCustomers = useMemo(() => {
+    if (!customers) return [];
+    if (!search.trim()) return customers;
+
+    const searchTerm = search.toLowerCase();
+    return customers.filter(
+      (customer) =>
+        customer.name?.toLowerCase().includes(searchTerm) ||
+        customer.email?.toLowerCase().includes(searchTerm) ||
+        customer.phone?.toLowerCase().includes(searchTerm)
+    );
+  }, [customers, search]);
 
   return (
     <div className="space-y-6">
@@ -67,14 +86,12 @@ const Customers = () => {
         <ClientDialog />
       </div>
 
-      {/* Campo de busca */}
-      <div className="mb-4">
-        <input
-          type="text"
-          placeholder="Buscar cliente por nome, email ou telefone..."
-          className="w-full px-4 py-2 border rounded-md"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
+      <div className="flex items-center space-x-2">
+        <Input
+          type="search"
+          placeholder="Buscar por nome, email ou telefone..."
+          className="max-w-sm"
+          onChange={(e) => debouncedSearch(e.target.value)}
         />
       </div>
 
@@ -83,68 +100,70 @@ const Customers = () => {
           <div className="text-center text-gray-500 py-6">
             Carregando clientes...
           </div>
-        ) : !filteredCustomers?.length ? (
+        ) : !filteredCustomers.length ? (
           <div className="text-center text-gray-500 py-6">
             Nenhum cliente encontrado
           </div>
         ) : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Nome</TableHead>
-                <TableHead>Email</TableHead>
-                <TableHead>Telefone</TableHead>
-                <TableHead>Endereço</TableHead>
-                <TableHead className="w-[100px]">Ações</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredCustomers.map((customer) => (
-                <TableRow key={customer.id}>
-                  <TableCell>{customer.name}</TableCell>
-                  <TableCell>{customer.email}</TableCell>
-                  <TableCell>{customer.phone}</TableCell>
-                  <TableCell>{customer.address}</TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      <ClientDialog
-                        initialData={customer}
-                        trigger={
-                          <Button size="icon" variant="ghost">
-                            <Pencil className="h-4 w-4" />
-                          </Button>
-                        }
-                      />
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button size="icon" variant="ghost">
-                            <Trash className="h-4 w-4" />
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>Excluir cliente</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              Tem certeza que deseja excluir este cliente? Esta
-                              ação não pode ser desfeita.
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                            <AlertDialogAction
-                              onClick={() => handleDelete(customer.id)}
-                            >
-                              Excluir
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
-                    </div>
-                  </TableCell>
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Nome</TableHead>
+                  <TableHead>Email</TableHead>
+                  <TableHead>Telefone</TableHead>
+                  <TableHead>Endereço</TableHead>
+                  <TableHead className="w-[100px]">Ações</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {filteredCustomers.map((customer) => (
+                  <TableRow key={customer.id}>
+                    <TableCell>{customer.name}</TableCell>
+                    <TableCell>{customer.email}</TableCell>
+                    <TableCell>{customer.phone}</TableCell>
+                    <TableCell>{customer.address}</TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <ClientDialog
+                          initialData={customer}
+                          trigger={
+                            <Button size="icon" variant="ghost">
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                          }
+                        />
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button size="icon" variant="ghost">
+                              <Trash className="h-4 w-4" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Excluir cliente</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Tem certeza que deseja excluir este cliente? Esta
+                                ação não pode ser desfeita.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                              <AlertDialogAction
+                                onClick={() => handleDelete(customer.id)}
+                              >
+                                Excluir
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
         )}
       </Card>
     </div>
