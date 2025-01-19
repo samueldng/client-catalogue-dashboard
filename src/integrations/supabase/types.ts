@@ -66,6 +66,7 @@ export type Database = {
           created_at: string | null
           due_date: string
           id: string
+          installment_number: number | null
           sale_id: string | null
           status: string | null
           updated_at: string | null
@@ -75,6 +76,7 @@ export type Database = {
           created_at?: string | null
           due_date: string
           id?: string
+          installment_number?: number | null
           sale_id?: string | null
           status?: string | null
           updated_at?: string | null
@@ -84,6 +86,7 @@ export type Database = {
           created_at?: string | null
           due_date?: string
           id?: string
+          installment_number?: number | null
           sale_id?: string | null
           status?: string | null
           updated_at?: string | null
@@ -214,7 +217,9 @@ export type Database = {
           customer_id: string | null
           due_date: string | null
           id: string
+          number_of_installments: number | null
           payment_method_id: string | null
+          payment_period: number | null
           payment_status: string | null
           total_amount: number
           updated_at: string | null
@@ -224,7 +229,9 @@ export type Database = {
           customer_id?: string | null
           due_date?: string | null
           id?: string
+          number_of_installments?: number | null
           payment_method_id?: string | null
+          payment_period?: number | null
           payment_status?: string | null
           total_amount: number
           updated_at?: string | null
@@ -234,7 +241,9 @@ export type Database = {
           customer_id?: string | null
           due_date?: string | null
           id?: string
+          number_of_installments?: number | null
           payment_method_id?: string | null
+          payment_period?: number | null
           payment_status?: string | null
           total_amount?: number
           updated_at?: string | null

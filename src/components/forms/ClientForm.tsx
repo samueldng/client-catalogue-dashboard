@@ -19,18 +19,18 @@ interface ClientFormProps {
   initialData?: {
     id: string;
     name: string;
-    email: string;
-    phone: string;
-    address: string;
+    email: string | null;
+    phone: string | null;
+    address: string | null;
   };
   onSuccess?: () => void;
 }
 
 const schema = z.object({
   name: z.string().min(1, 'Nome é obrigatório'),
-  email: z.string().email('Email inválido'),
-  phone: z.string().min(1, 'Telefone é obrigatório'),
-  address: z.string().min(1, 'Endereço é obrigatório'),
+  email: z.string().email('Email inválido').nullable(),
+  phone: z.string().min(1, 'Telefone é obrigatório').nullable(),
+  address: z.string().min(1, 'Endereço é obrigatório').nullable(),
 });
 
 type FormData = z.infer<typeof schema>;
@@ -41,9 +41,9 @@ export function ClientForm({ initialData, onSuccess }: ClientFormProps) {
     resolver: zodResolver(schema),
     defaultValues: {
       name: initialData?.name || "",
-      email: initialData?.email || "",
-      phone: initialData?.phone || "",
-      address: initialData?.address || "",
+      email: initialData?.email || null,
+      phone: initialData?.phone || null,
+      address: initialData?.address || null,
     },
   });
 
@@ -53,14 +53,26 @@ export function ClientForm({ initialData, onSuccess }: ClientFormProps) {
         // Atualização de cliente
         const { error } = await supabase
           .from("customers")
-          .update(data)
+          .update({
+            name: data.name,
+            email: data.email,
+            phone: data.phone,
+            address: data.address,
+          })
           .eq("id", initialData.id);
 
         if (error) throw error;
         toast.success("Cliente atualizado com sucesso!");
       } else {
         // Criação de novo cliente
-        const { error } = await supabase.from("customers").insert(data);
+        const { error } = await supabase
+          .from("customers")
+          .insert({
+            name: data.name,
+            email: data.email,
+            phone: data.phone,
+            address: data.address,
+          });
         if (error) throw error;
         toast.success("Cliente criado com sucesso!");
       }
