@@ -261,6 +261,13 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      decrement_stock: {
+        Args: {
+          p_id: string
+          qty: number
+        }
+        Returns: number
+      }
       get_total_profit: {
         Args: Record<PropertyKey, never>
         Returns: number

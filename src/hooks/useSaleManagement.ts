@@ -116,14 +116,19 @@ export function useSaleManagement() {
 
       // 4. Update product stock
       for (const product of selectedProducts) {
+        const { data: currentStock } = await supabase
+          .from('products')
+          .select('stock_quantity')
+          .eq('id', product.productId)
+          .single();
+
+        if (!currentStock) throw new Error('Product not found');
+
+        const newStock = currentStock.stock_quantity - product.quantity;
+
         const { error: stockError } = await supabase
           .from('products')
-          .update({ 
-            stock_quantity: supabase.rpc('decrement_stock', { 
-              p_id: product.productId, 
-              qty: product.quantity 
-            })
-          })
+          .update({ stock_quantity: newStock })
           .eq('id', product.productId);
 
         if (stockError) throw stockError;
