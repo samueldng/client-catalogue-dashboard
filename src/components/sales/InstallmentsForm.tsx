@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { addMonths, format } from "date-fns";
@@ -11,16 +11,15 @@ interface InstallmentsFormProps {
 export function InstallmentsForm({ totalAmount, onInstallmentsChange }: InstallmentsFormProps) {
   const [numberOfInstallments, setNumberOfInstallments] = useState(1);
 
-  const handleInstallmentsChange = (value: number) => {
-    const installmentAmount = totalAmount / value;
-    const installments = Array.from({ length: value }, (_, index) => ({
-      amount: installmentAmount,
+  useEffect(() => {
+    const installmentAmount = totalAmount / numberOfInstallments;
+    const installments = Array.from({ length: numberOfInstallments }, (_, index) => ({
+      amount: Number(installmentAmount.toFixed(2)),
       dueDate: format(addMonths(new Date(), index + 1), 'yyyy-MM-dd')
     }));
     
-    setNumberOfInstallments(value);
     onInstallmentsChange(installments);
-  };
+  }, [numberOfInstallments, totalAmount, onInstallmentsChange]);
 
   return (
     <div className="space-y-4">
@@ -31,7 +30,7 @@ export function InstallmentsForm({ totalAmount, onInstallmentsChange }: Installm
           min="1"
           max="12"
           value={numberOfInstallments}
-          onChange={(e) => handleInstallmentsChange(Number(e.target.value))}
+          onChange={(e) => setNumberOfInstallments(Number(e.target.value))}
         />
       </div>
       
@@ -51,6 +50,10 @@ export function InstallmentsForm({ totalAmount, onInstallmentsChange }: Installm
         {numberOfInstallments > 1 && Array.from({ length: numberOfInstallments }).map((_, index) => (
           <div key={index} className="flex justify-between text-sm">
             <span>Parcela {index + 1}</span>
+            <span>{new Intl.NumberFormat('pt-BR', {
+              style: 'currency',
+              currency: 'BRL'
+            }).format(totalAmount / numberOfInstallments)}</span>
             <span>{format(addMonths(new Date(), index + 1), 'dd/MM/yyyy')}</span>
           </div>
         ))}

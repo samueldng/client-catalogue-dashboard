@@ -13,6 +13,7 @@ interface SaleProductFormProps {
 export function SaleProductForm({ products, onAddProduct, stockError }: SaleProductFormProps) {
   const [selectedProductId, setSelectedProductId] = useState<string>("");
   const [quantity, setQuantity] = useState<number>(1);
+  const selectedProduct = products.find(p => p.id === selectedProductId);
 
   const handleAddProduct = () => {
     if (selectedProductId) {
@@ -34,7 +35,7 @@ export function SaleProductForm({ products, onAddProduct, stockError }: SaleProd
             <SelectContent>
               {products.map((product) => (
                 <SelectItem key={product.id} value={product.id}>
-                  {product.name}
+                  {product.name} - {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(product.price)}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -61,6 +62,15 @@ export function SaleProductForm({ products, onAddProduct, stockError }: SaleProd
           </Button>
         </div>
       </div>
+      
+      {selectedProduct && (
+        <div className="text-sm text-gray-600">
+          Subtotal: {new Intl.NumberFormat('pt-BR', { 
+            style: 'currency', 
+            currency: 'BRL' 
+          }).format(selectedProduct.price * quantity)}
+        </div>
+      )}
       
       {stockError && (
         <p className="text-red-500 text-sm">{stockError}</p>

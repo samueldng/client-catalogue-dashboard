@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -21,6 +21,11 @@ export function useSaleManagement() {
   const [totalAmount, setTotalAmount] = useState(0);
   const [installments, setInstallments] = useState<InstallmentData[]>([]);
 
+  useEffect(() => {
+    const total = selectedProducts.reduce((sum, product) => sum + product.total, 0);
+    setTotalAmount(total);
+  }, [selectedProducts]);
+
   const handleAddProduct = (product: any, quantity: number) => {
     if (product.stock_quantity < quantity) {
       setStockError("Quantidade insuficiente em estoque");
@@ -39,7 +44,11 @@ export function useSaleManagement() {
 
       const updatedProducts = selectedProducts.map(p =>
         p.productId === product.id
-          ? { ...p, quantity: totalQuantity, total: totalQuantity * p.price }
+          ? { 
+              ...p, 
+              quantity: totalQuantity, 
+              total: totalQuantity * p.price 
+            }
           : p
       );
       setSelectedProducts(updatedProducts);
@@ -55,18 +64,10 @@ export function useSaleManagement() {
         }
       ]);
     }
-
-    updateTotalAmount();
   };
 
   const handleRemoveProduct = (productId: string) => {
     setSelectedProducts(products => products.filter(p => p.productId !== productId));
-    updateTotalAmount();
-  };
-
-  const updateTotalAmount = () => {
-    const total = selectedProducts.reduce((sum, product) => sum + product.total, 0);
-    setTotalAmount(total);
   };
 
   const handleInstallmentsChange = (newInstallments: InstallmentData[]) => {
