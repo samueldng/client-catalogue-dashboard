@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/table";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { format } from "date-fns";
 
 const Debtors = () => {
   const { data: debtors, isLoading } = useQuery({
@@ -18,8 +19,13 @@ const Debtors = () => {
         .from('sales')
         .select(`
           *,
-          customer:customers(name, phone),
-          payment_method:payment_methods(name)
+          customer:customers(name, phone, email),
+          payment_method:payment_methods(name),
+          installments(
+            amount,
+            due_date,
+            status
+          )
         `)
         .eq('payment_status', 'pending')
         .order('created_at', { ascending: false });
@@ -37,7 +43,7 @@ const Debtors = () => {
   };
 
   const formatDate = (date: string) => {
-    return new Date(date).toLocaleDateString('pt-BR');
+    return format(new Date(date), 'dd/MM/yyyy');
   };
 
   return (
@@ -58,9 +64,10 @@ const Debtors = () => {
             <TableHeader>
               <TableRow>
                 <TableHead>Cliente</TableHead>
-                <TableHead>Telefone</TableHead>
+                <TableHead>Contato</TableHead>
                 <TableHead>Data da Venda</TableHead>
                 <TableHead>Forma de Pagamento</TableHead>
+                <TableHead>Parcelas</TableHead>
                 <TableHead className="text-right">Valor Pendente</TableHead>
               </TableRow>
             </TableHeader>
@@ -68,10 +75,37 @@ const Debtors = () => {
               {debtors.map((debtor) => (
                 <TableRow key={debtor.id}>
                   <TableCell>{debtor.customer?.name}</TableCell>
-                  <TableCell>{debtor.customer?.phone}</TableCell>
+                  <TableCell>
+                    <div className="space-y-1">
+                      <p>{debtor.customer?.phone}</p>
+                      <p className="text-sm text-gray-500">{debtor.customer?.email}</p>
+                    </div>
+                  </TableCell>
                   <TableCell>{formatDate(debtor.created_at)}</TableCell>
                   <TableCell>{debtor.payment_method?.name}</TableCell>
-                  <TableCell className="text-right">{formatCurrency(debtor.total_amount)}</TableCell>
+                  <TableCell>
+                    {debtor.installments?.length > 0 ? (
+                      <div className="space-y-1">
+                        {debtor.installments.map((inst: any, index: number) => (
+                          <div key={index} className="text-sm">
+                            {formatCurrency(inst.amount)} - {formatDate(inst.due_date)}
+                            <span className={`ml-2 px-2 py-0.5 rounded-full text-xs ${
+                              inst.status === 'paid' 
+                                ? 'bg-green-100 text-green-800'
+                                : 'bg-yellow-100 text-yellow-800'
+                            }`}>
+                              {inst.status === 'paid' ? 'Pago' : 'Pendente'}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      'Pagamento único'
+                    )}
+                  </TableCell>
+                  <TableCell className="text-right font-medium">
+                    {formatCurrency(debtor.total_amount)}
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>

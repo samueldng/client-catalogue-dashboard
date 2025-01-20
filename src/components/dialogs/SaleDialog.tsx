@@ -15,6 +15,7 @@ import { SaleProductForm } from "../sales/SaleProductForm";
 import { SaleProductList } from "../sales/SaleProductList";
 import { InstallmentsForm } from "../sales/InstallmentsForm";
 import { useSaleManagement } from "@/hooks/useSaleManagement";
+import { toast } from "sonner";
 
 interface SaleDialogProps {
   trigger?: React.ReactNode;
@@ -24,6 +25,7 @@ export function SaleDialog({ trigger }: SaleDialogProps) {
   const [open, setOpen] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState("");
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState("");
+  const [requiresInstallments, setRequiresInstallments] = useState(false);
 
   const {
     selectedProducts,
@@ -53,16 +55,33 @@ export function SaleDialog({ trigger }: SaleDialogProps) {
     },
   });
 
+  const { data: paymentMethods } = useQuery({
+    queryKey: ["payment_methods"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("payment_methods").select("*");
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const handlePaymentMethodChange = (methodId: string) => {
+    const method = paymentMethods?.find(m => m.id === methodId);
+    setSelectedPaymentMethod(methodId);
+    setRequiresInstallments(method?.requires_installments || false);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!selectedCustomer || !selectedPaymentMethod || selectedProducts.length === 0) {
+      toast.error("Preencha todos os campos obrigatórios");
       return;
     }
 
     const success = await createSale(selectedCustomer, selectedPaymentMethod);
     if (success) {
       setOpen(false);
+      toast.success("Venda realizada com sucesso!");
     }
   };
 
@@ -102,15 +121,16 @@ export function SaleDialog({ trigger }: SaleDialogProps) {
 
             <div className="space-y-2">
               <label className="text-sm font-medium">Forma de Pagamento</label>
-              <Select value={selectedPaymentMethod} onValueChange={setSelectedPaymentMethod}>
+              <Select value={selectedPaymentMethod} onValueChange={handlePaymentMethodChange}>
                 <SelectTrigger>
                   <SelectValue placeholder="Selecione a forma de pagamento" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="cash">Dinheiro</SelectItem>
-                  <SelectItem value="credit_card">Cartão de Crédito</SelectItem>
-                  <SelectItem value="pix">PIX</SelectItem>
-                  <SelectItem value="installments">A Prazo</SelectItem>
+                  {paymentMethods?.map((method) => (
+                    <SelectItem key={method.id} value={method.id}>
+                      {method.name}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -135,7 +155,7 @@ export function SaleDialog({ trigger }: SaleDialogProps) {
               />
             )}
 
-            {selectedPaymentMethod === 'installments' && (
+            {requiresInstallments && (
               <InstallmentsForm
                 totalAmount={totalAmount}
                 onInstallmentsChange={handleInstallmentsChange}

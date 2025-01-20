@@ -11,9 +11,9 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { format } from "date-fns";
+import { DollarSign, ShoppingCart, AlertCircle } from "lucide-react";
 
 const Dashboard = () => {
-  // Query for top selling products
   const { data: topProducts, isLoading: isLoadingProducts } = useQuery({
     queryKey: ["top-products"],
     queryFn: async () => {
@@ -30,24 +30,20 @@ const Dashboard = () => {
 
       if (error) throw error;
 
-      // Aggregate quantities by product
       const aggregated = data.reduce((acc: any, item) => {
         const productName = item.products?.name || "Unknown";
         acc[productName] = (acc[productName] || 0) + item.quantity;
         return acc;
       }, {});
 
-      // Convert to chart format
       return Object.entries(aggregated).map(([name, quantity]) => ({
         name,
         quantity,
       }));
     },
-    staleTime: 1000 * 60 * 5, // Cache for 5 minutes
   });
 
-  // Query for recent sales
-  const { data: recentSales, isLoading: isLoadingSales } = useQuery({
+  const { data: recentSales } = useQuery({
     queryKey: ["recent-sales"],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -56,7 +52,8 @@ const Dashboard = () => {
           *,
           customers (
             name
-          )
+          ),
+          payment_method:payment_methods(name)
         `)
         .order("created_at", { ascending: false })
         .limit(5);
@@ -64,10 +61,8 @@ const Dashboard = () => {
       if (error) throw error;
       return data;
     },
-    staleTime: 1000 * 60 * 5, // Cache for 5 minutes
   });
 
-  // Query for total sales amount
   const { data: totalSales } = useQuery({
     queryKey: ["total-sales"],
     queryFn: async () => {
@@ -77,7 +72,30 @@ const Dashboard = () => {
       if (error) throw error;
       return data;
     },
-    staleTime: 1000 * 60 * 5, // Cache for 5 minutes
+  });
+
+  const { data: totalProfit } = useQuery({
+    queryKey: ["total-profit"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .rpc("get_total_profit");
+      
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const { data: pendingPayments } = useQuery({
+    queryKey: ["pending-payments"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("sales")
+        .select("total_amount")
+        .eq("payment_status", "pending");
+      
+      if (error) throw error;
+      return data.reduce((sum, sale) => sum + Number(sale.total_amount), 0);
+    },
   });
 
   return (
@@ -88,6 +106,7 @@ const Dashboard = () => {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total em Vendas</CardTitle>
+            <ShoppingCart className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
@@ -95,6 +114,36 @@ const Dashboard = () => {
                 style: 'currency',
                 currency: 'BRL'
               }).format(totalSales || 0)}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Lucro Total</CardTitle>
+            <DollarSign className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {new Intl.NumberFormat('pt-BR', {
+                style: 'currency',
+                currency: 'BRL'
+              }).format(totalProfit || 0)}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Pagamentos Pendentes</CardTitle>
+            <AlertCircle className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {new Intl.NumberFormat('pt-BR', {
+                style: 'currency',
+                currency: 'BRL'
+              }).format(pendingPayments || 0)}
             </div>
           </CardContent>
         </Card>
@@ -129,35 +178,33 @@ const Dashboard = () => {
             <CardTitle>Vendas Recentes</CardTitle>
           </CardHeader>
           <CardContent>
-            {isLoadingSales ? (
-              <div className="text-center py-4">Carregando...</div>
-            ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Cliente</TableHead>
-                    <TableHead>Valor</TableHead>
-                    <TableHead>Data</TableHead>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Cliente</TableHead>
+                  <TableHead>Forma de Pagamento</TableHead>
+                  <TableHead>Valor</TableHead>
+                  <TableHead>Data</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {recentSales?.map((sale) => (
+                  <TableRow key={sale.id}>
+                    <TableCell>{sale.customers?.name}</TableCell>
+                    <TableCell>{sale.payment_method?.name}</TableCell>
+                    <TableCell>
+                      {new Intl.NumberFormat('pt-BR', {
+                        style: 'currency',
+                        currency: 'BRL'
+                      }).format(sale.total_amount)}
+                    </TableCell>
+                    <TableCell>
+                      {format(new Date(sale.created_at), 'dd/MM/yyyy')}
+                    </TableCell>
                   </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {recentSales?.map((sale) => (
-                    <TableRow key={sale.id}>
-                      <TableCell>{sale.customers?.name}</TableCell>
-                      <TableCell>
-                        {new Intl.NumberFormat('pt-BR', {
-                          style: 'currency',
-                          currency: 'BRL'
-                        }).format(sale.total_amount)}
-                      </TableCell>
-                      <TableCell>
-                        {format(new Date(sale.created_at), 'dd/MM/yyyy')}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            )}
+                ))}
+              </TableBody>
+            </Table>
           </CardContent>
         </Card>
       </div>
