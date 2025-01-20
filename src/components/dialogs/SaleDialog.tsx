@@ -26,6 +26,7 @@ export function SaleDialog({ trigger }: SaleDialogProps) {
   const [selectedCustomer, setSelectedCustomer] = useState("");
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState("");
   const [requiresInstallments, setRequiresInstallments] = useState(false);
+  const [numberOfInstallments, setNumberOfInstallments] = useState(1);
 
   const {
     selectedProducts,
@@ -68,6 +69,9 @@ export function SaleDialog({ trigger }: SaleDialogProps) {
     const method = paymentMethods?.find(m => m.id === methodId);
     setSelectedPaymentMethod(methodId);
     setRequiresInstallments(method?.requires_installments || false);
+    if (!method?.requires_installments) {
+      setNumberOfInstallments(1);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -78,7 +82,12 @@ export function SaleDialog({ trigger }: SaleDialogProps) {
       return;
     }
 
-    const success = await createSale(selectedCustomer, selectedPaymentMethod);
+    if (requiresInstallments && numberOfInstallments < 1) {
+      toast.error("Número de parcelas inválido");
+      return;
+    }
+
+    const success = await createSale(selectedCustomer, selectedPaymentMethod, numberOfInstallments);
     if (success) {
       setOpen(false);
       toast.success("Venda realizada com sucesso!");
@@ -158,7 +167,10 @@ export function SaleDialog({ trigger }: SaleDialogProps) {
             {requiresInstallments && (
               <InstallmentsForm
                 totalAmount={totalAmount}
-                onInstallmentsChange={handleInstallmentsChange}
+                onInstallmentsChange={(installments) => {
+                  setNumberOfInstallments(installments.length);
+                  handleInstallmentsChange(installments);
+                }}
               />
             )}
           </div>
@@ -171,6 +183,14 @@ export function SaleDialog({ trigger }: SaleDialogProps) {
                   currency: 'BRL'
                 }).format(totalAmount)}
               </p>
+              {requiresInstallments && numberOfInstallments > 1 && (
+                <p className="text-sm text-gray-500">
+                  {numberOfInstallments}x de {new Intl.NumberFormat('pt-BR', {
+                    style: 'currency',
+                    currency: 'BRL'
+                  }).format(totalAmount / numberOfInstallments)}
+                </p>
+              )}
             </div>
 
             <div className="flex gap-4">

@@ -31,9 +31,15 @@ export function useSaleManagement() {
     const existingProduct = selectedProducts.find(p => p.productId === product.id);
 
     if (existingProduct) {
+      const totalQuantity = existingProduct.quantity + quantity;
+      if (product.stock_quantity < totalQuantity) {
+        setStockError("Quantidade total excede o estoque disponível");
+        return;
+      }
+
       const updatedProducts = selectedProducts.map(p =>
         p.productId === product.id
-          ? { ...p, quantity: p.quantity + quantity, total: (p.quantity + quantity) * p.price }
+          ? { ...p, quantity: totalQuantity, total: totalQuantity * p.price }
           : p
       );
       setSelectedProducts(updatedProducts);
@@ -67,7 +73,7 @@ export function useSaleManagement() {
     setInstallments(newInstallments);
   };
 
-  const createSale = async (customerId: string, paymentMethodId: string) => {
+  const createSale = async (customerId: string, paymentMethodId: string, numberOfInstallments: number = 1) => {
     try {
       // 1. Create the sale
       const { data: sale, error: saleError } = await supabase
@@ -76,7 +82,8 @@ export function useSaleManagement() {
           customer_id: customerId,
           payment_method_id: paymentMethodId,
           total_amount: totalAmount,
-          payment_status: paymentMethodId === 'installments' ? 'pending' : 'paid',
+          payment_status: numberOfInstallments > 1 ? 'pending' : 'paid',
+          number_of_installments: numberOfInstallments
         })
         .select()
         .single();
@@ -99,12 +106,13 @@ export function useSaleManagement() {
       if (itemsError) throw itemsError;
 
       // 3. Create installments if applicable
-      if (paymentMethodId === 'installments' && installments.length > 0) {
-        const installmentRecords = installments.map(inst => ({
+      if (numberOfInstallments > 1 && installments.length > 0) {
+        const installmentRecords = installments.map((inst, index) => ({
           sale_id: sale.id,
           amount: inst.amount,
           due_date: inst.dueDate,
-          status: 'pending'
+          status: 'pending',
+          installment_number: index + 1
         }));
 
         const { error: installmentsError } = await supabase
@@ -134,7 +142,6 @@ export function useSaleManagement() {
         if (stockError) throw stockError;
       }
 
-      toast.success('Venda realizada com sucesso!');
       return true;
     } catch (error) {
       console.error('Erro ao criar venda:', error);

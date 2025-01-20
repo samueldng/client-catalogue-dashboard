@@ -24,7 +24,8 @@ const Debtors = () => {
           installments(
             amount,
             due_date,
-            status
+            status,
+            installment_number
           )
         `)
         .eq('payment_status', 'pending')
@@ -68,7 +69,7 @@ const Debtors = () => {
                 <TableHead>Data da Venda</TableHead>
                 <TableHead>Forma de Pagamento</TableHead>
                 <TableHead>Parcelas</TableHead>
-                <TableHead className="text-right">Valor Pendente</TableHead>
+                <TableHead className="text-right">Valor Total</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -86,9 +87,11 @@ const Debtors = () => {
                   <TableCell>
                     {debtor.installments?.length > 0 ? (
                       <div className="space-y-1">
-                        {debtor.installments.map((inst: any, index: number) => (
-                          <div key={index} className="text-sm">
-                            {formatCurrency(inst.amount)} - {formatDate(inst.due_date)}
+                        {debtor.installments
+                          .sort((a, b) => a.installment_number - b.installment_number)
+                          .map((inst: any) => (
+                          <div key={inst.id} className="text-sm">
+                            {inst.installment_number}ª - {formatCurrency(inst.amount)} - {formatDate(inst.due_date)}
                             <span className={`ml-2 px-2 py-0.5 rounded-full text-xs ${
                               inst.status === 'paid' 
                                 ? 'bg-green-100 text-green-800'

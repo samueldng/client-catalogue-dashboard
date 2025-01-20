@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { addMonths, format } from "date-fns";
 
 interface InstallmentsFormProps {
   totalAmount: number;
@@ -14,7 +15,7 @@ export function InstallmentsForm({ totalAmount, onInstallmentsChange }: Installm
     const installmentAmount = totalAmount / value;
     const installments = Array.from({ length: value }, (_, index) => ({
       amount: installmentAmount,
-      dueDate: new Date(Date.now() + (index + 1) * 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+      dueDate: format(addMonths(new Date(), index + 1), 'yyyy-MM-dd')
     }));
     
     setNumberOfInstallments(value);
@@ -44,6 +45,15 @@ export function InstallmentsForm({ totalAmount, onInstallmentsChange }: Installm
             }).format(totalAmount / numberOfInstallments)}
           </p>
         )}
+      </div>
+
+      <div className="space-y-2">
+        {numberOfInstallments > 1 && Array.from({ length: numberOfInstallments }).map((_, index) => (
+          <div key={index} className="flex justify-between text-sm">
+            <span>Parcela {index + 1}</span>
+            <span>{format(addMonths(new Date(), index + 1), 'dd/MM/yyyy')}</span>
+          </div>
+        ))}
       </div>
     </div>
   );
