@@ -14,7 +14,7 @@ import { format } from "date-fns";
 import { DollarSign, ShoppingCart, AlertCircle } from "lucide-react";
 
 const Dashboard = () => {
-  const { data: topProducts, isLoading: isLoadingProducts } = useQuery({
+  const { data: topProducts } = useQuery({
     queryKey: ["top-products"],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -155,21 +155,15 @@ const Dashboard = () => {
             <CardTitle>Produtos Mais Vendidos</CardTitle>
           </CardHeader>
           <CardContent className="h-[300px]">
-            {isLoadingProducts ? (
-              <div className="flex items-center justify-center h-full">
-                Carregando...
-              </div>
-            ) : (
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={topProducts}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" />
-                  <YAxis />
-                  <Tooltip />
-                  <Bar dataKey="quantity" fill="#8884d8" />
-                </BarChart>
-              </ResponsiveContainer>
-            )}
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={topProducts}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="name" />
+                <YAxis />
+                <Tooltip />
+                <Bar dataKey="quantity" fill="#8884d8" />
+              </BarChart>
+            </ResponsiveContainer>
           </CardContent>
         </Card>
 

@@ -23,7 +23,7 @@ export function useSaleManagement() {
 
   useEffect(() => {
     const total = selectedProducts.reduce((sum, product) => sum + product.total, 0);
-    setTotalAmount(total);
+    setTotalAmount(Number(total.toFixed(2)));
   }, [selectedProducts]);
 
   const handleAddProduct = (product: any, quantity: number) => {
@@ -47,7 +47,7 @@ export function useSaleManagement() {
           ? { 
               ...p, 
               quantity: totalQuantity, 
-              total: totalQuantity * p.price 
+              total: Number((totalQuantity * p.price).toFixed(2))
             }
           : p
       );
@@ -59,8 +59,8 @@ export function useSaleManagement() {
           productId: product.id,
           productName: product.name,
           quantity,
-          price: product.price,
-          total: product.price * quantity
+          price: Number(product.price),
+          total: Number((product.price * quantity).toFixed(2))
         }
       ]);
     }

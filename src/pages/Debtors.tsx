@@ -22,6 +22,7 @@ const Debtors = () => {
           customer:customers(name, phone, email),
           payment_method:payment_methods(name),
           installments(
+            id,
             amount,
             due_date,
             status,
@@ -88,7 +89,7 @@ const Debtors = () => {
                     {debtor.installments?.length > 0 ? (
                       <div className="space-y-1">
                         {debtor.installments
-                          .sort((a, b) => a.installment_number - b.installment_number)
+                          .sort((a: any, b: any) => a.installment_number - b.installment_number)
                           .map((inst: any) => (
                           <div key={inst.id} className="text-sm">
                             {inst.installment_number}ª - {formatCurrency(inst.amount)} - {formatDate(inst.due_date)}
