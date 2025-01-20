@@ -285,6 +285,12 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: number
       }
+      mark_installment_paid: {
+        Args: {
+          p_installment_id: string
+        }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never

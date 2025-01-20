@@ -7,11 +7,16 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { useQuery } from "@tanstack/react-query";
+import { Button } from "@/components/ui/button";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
+import { toast } from "sonner";
+import { Trash2, Edit, CheckCircle } from "lucide-react";
 
 const Debtors = () => {
+  const queryClient = useQueryClient();
+  
   const { data: debtors, isLoading } = useQuery({
     queryKey: ['debtors'],
     queryFn: async () => {
@@ -36,6 +41,40 @@ const Debtors = () => {
       return data;
     },
   });
+
+  const handleDeleteSale = async (saleId: string) => {
+    try {
+      const { error } = await supabase
+        .from('sales')
+        .delete()
+        .eq('id', saleId);
+
+      if (error) throw error;
+
+      queryClient.invalidateQueries({ queryKey: ['debtors'] });
+      toast.success('Venda excluída com sucesso');
+    } catch (error) {
+      console.error('Erro ao excluir venda:', error);
+      toast.error('Erro ao excluir venda');
+    }
+  };
+
+  const handleMarkInstallmentAsPaid = async (installmentId: string) => {
+    try {
+      const { error } = await supabase
+        .rpc('mark_installment_paid', {
+          p_installment_id: installmentId
+        });
+
+      if (error) throw error;
+
+      queryClient.invalidateQueries({ queryKey: ['debtors'] });
+      toast.success('Parcela marcada como paga');
+    } catch (error) {
+      console.error('Erro ao marcar parcela como paga:', error);
+      toast.error('Erro ao marcar parcela como paga');
+    }
+  };
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
@@ -71,6 +110,7 @@ const Debtors = () => {
                 <TableHead>Forma de Pagamento</TableHead>
                 <TableHead>Parcelas</TableHead>
                 <TableHead className="text-right">Valor Total</TableHead>
+                <TableHead className="text-right">Ações</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -91,15 +131,27 @@ const Debtors = () => {
                         {debtor.installments
                           .sort((a: any, b: any) => a.installment_number - b.installment_number)
                           .map((inst: any) => (
-                          <div key={inst.id} className="text-sm">
-                            {inst.installment_number}ª - {formatCurrency(inst.amount)} - {formatDate(inst.due_date)}
-                            <span className={`ml-2 px-2 py-0.5 rounded-full text-xs ${
-                              inst.status === 'paid' 
-                                ? 'bg-green-100 text-green-800'
-                                : 'bg-yellow-100 text-yellow-800'
-                            }`}>
-                              {inst.status === 'paid' ? 'Pago' : 'Pendente'}
-                            </span>
+                          <div key={inst.id} className="text-sm flex items-center justify-between gap-2">
+                            <div>
+                              {inst.installment_number}ª - {formatCurrency(inst.amount)} - {formatDate(inst.due_date)}
+                              <span className={`ml-2 px-2 py-0.5 rounded-full text-xs ${
+                                inst.status === 'paid' 
+                                  ? 'bg-green-100 text-green-800'
+                                  : 'bg-yellow-100 text-yellow-800'
+                              }`}>
+                                {inst.status === 'paid' ? 'Pago' : 'Pendente'}
+                              </span>
+                            </div>
+                            {inst.status === 'pending' && (
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => handleMarkInstallmentAsPaid(inst.id)}
+                                title="Marcar como paga"
+                              >
+                                <CheckCircle className="h-4 w-4 text-green-500" />
+                              </Button>
+                            )}
                           </div>
                         ))}
                       </div>
@@ -109,6 +161,18 @@ const Debtors = () => {
                   </TableCell>
                   <TableCell className="text-right font-medium">
                     {formatCurrency(debtor.total_amount)}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex justify-end gap-2">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleDeleteSale(debtor.id)}
+                        title="Excluir venda"
+                      >
+                        <Trash2 className="h-4 w-4 text-red-500" />
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}
